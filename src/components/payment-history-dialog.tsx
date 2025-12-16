@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, X, TrendingUp, BarChart } from "lucide-react";
+import { History, Landmark, CreditCard, TrendingUp, BarChart } from "lucide-react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogClose,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
@@ -156,11 +155,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
             </DialogTrigger>
             <DialogContent className="max-w-md md:max-w-2xl lg:max-w-4xl h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Income &amp; History</DialogTitle>
-                     <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Close</span>
-                    </DialogClose>
+                    <DialogTitle className="font-headline text-2xl pr-8">Income &amp; History</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="flex-grow -mx-6 px-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
