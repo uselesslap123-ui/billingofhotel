@@ -43,7 +43,7 @@ export type Note = {
 };
 
 
-const TOTAL_TABLES = [...Array.from({ length: 8 }, (_, i) => (i + 1).toString()), 'Parcel'];
+const INITIAL_TABLES = [...Array.from({ length: 8 }, (_, i) => (i + 1).toString()), 'Parcel'];
 
 export default function Home() {
   const [bills, setBills] = useState<Bills>({});
@@ -52,6 +52,7 @@ export default function Home() {
   const [settledUdhariBills, setSettledUdhariBills] = useState<UdhariBill[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<SettledBill[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [tables, setTables] = useState<string[]>(INITIAL_TABLES);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -61,12 +62,16 @@ export default function Home() {
       const savedSettledUdhariBills = localStorage.getItem('settledUdhariBills');
       const savedPaymentHistory = localStorage.getItem('paymentHistory');
       const savedNotes = localStorage.getItem('notes');
+      const savedTables = localStorage.getItem('tables');
 
       if (savedBills) setBills(JSON.parse(savedBills));
       if (savedUdhariBills) setUdhariBills(prev => [...prev, ...JSON.parse(savedUdhariBills)]);
       if (savedSettledUdhariBills) setSettledUdhariBills(prev => [...prev, ...JSON.parse(savedSettledUdhariBills)]);
       if (savedPaymentHistory) setPaymentHistory(prev => [...prev, ...JSON.parse(savedPaymentHistory)]);
       if (savedNotes) setNotes(JSON.parse(savedNotes));
+      if (savedTables) {
+        setTables(JSON.parse(savedTables));
+      }
 
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
@@ -124,6 +129,36 @@ export default function Home() {
     }
   }, [notes, isLoaded]);
 
+  useEffect(() => {
+    if (isLoaded) {
+      try {
+        localStorage.setItem('tables', JSON.stringify(tables));
+      } catch (error) {
+        console.error("Failed to save tables to localStorage", error);
+      }
+    }
+  }, [tables, isLoaded]);
+
+  const handleAddTable = () => {
+    setTables(prevTables => {
+      const numericTables = prevTables
+        .filter(t => t !== 'Parcel')
+        .map(t => parseInt(t, 10))
+        .filter(t => !isNaN(t));
+      
+      const nextTableNumber = numericTables.length > 0 ? Math.max(...numericTables) + 1 : 1;
+      
+      const newTables = [...prevTables];
+      const parcelIndex = newTables.indexOf('Parcel');
+
+      if (parcelIndex > -1) {
+        newTables.splice(parcelIndex, 0, nextTableNumber.toString());
+      } else {
+        newTables.push(nextTableNumber.toString());
+      }
+      return newTables;
+    });
+  };
 
   const addToBill = (item: MenuItem) => {
     setBills((prevBills) => {
@@ -281,16 +316,17 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
              <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
-                <div className="animate-marquee">
+                <div className="animate-marquee flex">
                   <MarqueeText />
                   <MarqueeText />
                 </div>
              </div>
              <TableLayout
-              tables={TOTAL_TABLES}
+              tables={tables}
               activeTable={activeTable}
               billedTables={billedTables}
               onSelectTable={setActiveTable}
+              onAddTable={handleAddTable}
             />
             <MenuSection onAddItem={addToBill} billItems={bills[activeTable] || []} />
           </div>
@@ -316,4 +352,3 @@ export default function Home() {
   );
 }
 
-    

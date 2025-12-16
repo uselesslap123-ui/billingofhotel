@@ -4,16 +4,17 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package } from "lucide-react";
+import { Package, Plus } from "lucide-react";
 
 interface TableLayoutProps {
   tables: string[];
   activeTable: string;
   billedTables: string[];
   onSelectTable: (table: string) => void;
+  onAddTable: () => void;
 }
 
-export function TableLayout({ tables, activeTable, billedTables, onSelectTable }: TableLayoutProps) {
+export function TableLayout({ tables, activeTable, billedTables, onSelectTable, onAddTable }: TableLayoutProps) {
   return (
     <Card className="shadow-sm">
       <CardHeader>
@@ -42,6 +43,13 @@ export function TableLayout({ tables, activeTable, billedTables, onSelectTable }
               </Button>
             );
           })}
+           <Button
+              variant="outline"
+              className="h-16 text-lg font-bold transition-all duration-300 transform hover:scale-105 flex-col border-dashed"
+              onClick={onAddTable}
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
         </div>
       </CardContent>
     </Card>
