@@ -254,7 +254,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   <DialogHeader>
                     <DialogTitle className="font-headline">Bill & Payment Options</DialogTitle>
                   </DialogHeader>
-                  <ScrollArea className="flex-grow pr-6 -mr-6">
+                  <div className="flex-grow overflow-y-auto pr-6 -mr-6">
                     <div id="bill-to-print" ref={billContentRef} className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
                       <div className="text-center mb-6">
                         <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
@@ -306,7 +306,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       <Separator className="my-4 border-dashed border-gray-400" />
                       <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                     </div>
-                  </ScrollArea>
+                  </div>
                   <DialogFooter className="pt-4 flex-wrap items-center justify-between border-t mt-auto">
                      <div className="flex gap-2 mb-2 sm:mb-0">
                        <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
@@ -353,4 +353,3 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   );
 }
 
-    
