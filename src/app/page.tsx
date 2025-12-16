@@ -89,7 +89,7 @@ export default function Home() {
     setUdhariBills(prev => prev.filter(bill => bill.id !== udhariId));
   }
 
-  const billedTables = Object.keys(bills);
+  const billedTables = Array.from(Object.keys(bills));
 
   return (
     <div className="min-h-screen bg-background text-foreground">
