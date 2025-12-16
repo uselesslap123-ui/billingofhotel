@@ -8,7 +8,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import type { BillItem } from "@/app/page";
-import Image from "next/image";
 
 interface MenuSectionProps {
   onAddItem: (item: MenuItem) => void;
@@ -41,26 +40,17 @@ export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
             const currentItemInBill = billItems.find(billItem => billItem.id === item.id);
             const quantity = currentItemInBill ? currentItemInBill.quantity : 0;
             return (
-            <Card key={item.id} className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden">
-              <CardHeader className="p-0">
-                <div className="relative w-full aspect-[3/2]">
-                    <Image 
-                        src={item.imageUrl}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        data-ai-hint={item.imageHint}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                    />
-                </div>
+            <Card key={item.id} className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+              <CardHeader className="flex-row items-start justify-between pb-2">
+                 <CardTitle className="text-base font-medium">{item.name}</CardTitle>
+                <div className="text-3xl">{item.icon}</div>
               </CardHeader>
-              <CardContent className="flex-grow p-4">
-                 <CardTitle className="text-base font-medium mb-2">{item.name}</CardTitle>
+              <CardContent className="flex-grow">
                 <p className="text-lg font-semibold">
                   Rs.{item.price.toFixed(2)}
                 </p>
               </CardContent>
-              <CardFooter className="p-4 pt-0">
+              <CardFooter>
                 <Button className="w-full" onClick={() => onAddItem(item)} variant="outline">
                   <Plus className="mr-2 h-4 w-4" /> 
                   <span>Add to Bill</span>
