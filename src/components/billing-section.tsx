@@ -296,10 +296,16 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             size={128} 
                             quietZone={10}
                             qrStyle="dots"
-                            eyeRadius={5}
+                            eyeRadius={[
+                              { outer: 8, inner: 4 }, // top-left
+                              { outer: 8, inner: 4 }, // top-right
+                              { outer: 8, inner: 4 }, // bottom-left
+                            ]}
                             logoImage={logoDataUri}
-                            logoWidth={35}
-                            logoHeight={35}
+                            logoWidth={30}
+                            logoHeight={30}
+                            logoPadding={5}
+                            logoPaddingStyle="circle"
                             fgColor="#004d4d"
                           />
                         </div>
@@ -330,5 +336,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
+
+    
 
     
