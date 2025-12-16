@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -20,15 +21,19 @@ import html2canvas from "html2canvas";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "./ui/label";
 
 interface BillingSectionProps {
   items: BillItem[];
   onUpdateQuantity: (itemId: number, quantity: number) => void;
+  onClearBill: () => void;
+  activeTable: string;
+  onSetActiveTable: (table: string) => void;
 }
 
 const GST_RATE = 0.05; // 5%
 
-export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps) {
+export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTable, onSetActiveTable }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -56,6 +61,11 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
     return true;
   };
 
+  const handleDialogClose = () => {
+    setBillNumber('');
+    onClearBill();
+  }
+
   const handleDownloadPdf = () => {
     const input = billContentRef.current;
     if (input) {
@@ -80,7 +90,19 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
   return (
     <Card className="sticky top-20 shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-xl">Current Bill</CardTitle>
+        <CardTitle className="font-headline text-xl flex justify-between items-center">
+          <span>Current Bill</span>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="table-number" className="text-sm font-medium">Table No:</Label>
+            <Input 
+              id="table-number"
+              type="text" 
+              value={activeTable}
+              onChange={(e) => onSetActiveTable(e.target.value)}
+              className="w-20 h-8"
+            />
+          </div>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -94,7 +116,7 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
             <div className="space-y-3">
               {items.length === 0 && (
                 <p className="text-center text-muted-foreground py-10">
-                  No items added yet.
+                  No items added for Table {activeTable}.
                 </p>
               )}
               {items.map((item) => (
@@ -159,7 +181,7 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
             </>
           )}
 
-          <Dialog onOpenChange={(open) => !open && setBillNumber('')}>
+          <Dialog onOpenChange={(open) => !open && handleDialogClose()}>
             <DialogTrigger asChild>
               <Button size="lg" className="w-full" onClick={handleGenerateBill} disabled={items.length === 0}>
                 <Printer className="mr-2 h-4 w-4" /> Generate Bill
@@ -180,7 +202,10 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
                     <p><strong>Bill No:</strong> {billNumber}</p>
                     <p><strong>Date:</strong> {billDate}</p>
                   </div>
-                  {customerName && <p className="text-xs mb-2"><strong>Customer:</strong> {customerName}</p>}
+                  <div className="flex justify-between text-xs mb-2">
+                    <p><strong>Table No:</strong> {activeTable}</p>
+                    {customerName && <p><strong>Customer:</strong> {customerName}</p>}
+                  </div>
                   <Separator className="my-2 bg-gray-300"/>
                   <table className="w-full text-xs">
                     <thead>
@@ -224,8 +249,8 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
                 <DialogFooter>
                   <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
                   <DialogClose asChild>
-                    <Button type="button" variant="outline">
-                      Close
+                    <Button type="button">
+                      Close & Clear Bill
                     </Button>
                   </DialogClose>
                 </DialogFooter>

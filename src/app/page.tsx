@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -8,30 +9,61 @@ import { UtensilsCrossed } from "lucide-react";
 
 export type BillItem = MenuItem & { quantity: number };
 
+export type Bills = {
+  [table: string]: BillItem[];
+};
+
 export default function Home() {
-  const [billItems, setBillItems] = useState<BillItem[]>([]);
+  const [bills, setBills] = useState<Bills>({});
+  const [activeTable, setActiveTable] = useState("1");
 
   const addToBill = (item: MenuItem) => {
-    setBillItems((prevItems) => {
-      const existingItem = prevItems.find((i) => i.id === item.id);
+    setBills((prevBills) => {
+      const tableBill = prevBills[activeTable] || [];
+      const existingItem = tableBill.find((i) => i.id === item.id);
+
+      let newTableBill;
       if (existingItem) {
-        return prevItems.map((i) =>
+        newTableBill = tableBill.map((i) =>
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
+      } else {
+        newTableBill = [...tableBill, { ...item, quantity: 1 }];
       }
-      return [...prevItems, { ...item, quantity: 1 }];
+
+      return { ...prevBills, [activeTable]: newTableBill };
     });
   };
 
   const updateQuantity = (itemId: number, quantity: number) => {
-    if (quantity <= 0) {
-      setBillItems((prevItems) => prevItems.filter((i) => i.id !== itemId));
-    } else {
-      setBillItems((prevItems) =>
-        prevItems.map((i) => (i.id === itemId ? { ...i, quantity } : i))
-      );
-    }
+    setBills((prevBills) => {
+      const tableBill = prevBills[activeTable] || [];
+      let newTableBill;
+
+      if (quantity <= 0) {
+        newTableBill = tableBill.filter((i) => i.id !== itemId);
+      } else {
+        newTableBill = tableBill.map((i) =>
+          i.id === itemId ? { ...i, quantity } : i
+        );
+      }
+
+      const newBills = { ...prevBills, [activeTable]: newTableBill };
+      if(newTableBill.length === 0) {
+        delete newBills[activeTable];
+      }
+
+      return newBills;
+    });
   };
+
+  const clearBill = () => {
+     setBills((prevBills) => {
+        const newBills = {...prevBills};
+        delete newBills[activeTable];
+        return newBills;
+     });
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -58,8 +90,11 @@ export default function Home() {
           </div>
           <div className="lg:col-span-2">
             <BillingSection
-              items={billItems}
+              items={bills[activeTable] || []}
               onUpdateQuantity={updateQuantity}
+              onClearBill={clearBill}
+              activeTable={activeTable}
+              onSetActiveTable={setActiveTable}
             />
           </div>
         </div>
