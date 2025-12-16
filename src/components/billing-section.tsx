@@ -97,8 +97,8 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / canvasHeight;
         
-        const imgWidth = pdfWidth;
-        const imgHeight = imgWidth / ratio;
+        let imgWidth = pdfWidth;
+        let imgHeight = imgWidth / ratio;
         
         let heightLeft = imgHeight;
         let position = 0;
@@ -307,12 +307,12 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                     </div>
                   </div>
-                  <DialogFooter className="pt-4 flex-wrap items-center justify-between border-t mt-auto">
-                     <div className="flex gap-2 mb-2 sm:mb-0">
+                  <DialogFooter className="pt-4 sm:justify-between flex-col sm:flex-row gap-2">
+                     <div className="flex gap-2 justify-start">
                        <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
                        <Button variant="secondary" size="sm" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
                      </div>
-                     <div className="flex gap-2">
+                     <div className="flex gap-2 justify-end">
                         <Dialog>
                            <DialogTrigger asChild>
                               <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
@@ -353,3 +353,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   );
 }
 
+
+    
