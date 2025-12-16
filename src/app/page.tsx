@@ -9,6 +9,7 @@ import { UdhariDialog } from "@/components/udhari-dialog";
 import { PaymentHistoryDialog } from "@/components/payment-history-dialog";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
+import { CurrentBillsDialog } from "@/components/current-bills-dialog";
 
 export type BillItem = MenuItem & { quantity: number };
 
@@ -141,7 +142,8 @@ export default function Home() {
                 हॉटेल सुग्ररण
               </h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+               <CurrentBillsDialog bills={bills} />
                <UdhariDialog 
                   udhariBills={udhariBills} 
                   settledUdhariBills={settledUdhariBills}
