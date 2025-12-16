@@ -26,18 +26,18 @@ interface PaymentHistoryDialogProps {
 
 const SettledBillCard = ({ bill }: { bill: SettledBill }) => {
     const isMobile = useIsMobile();
-    const dateFormat = isMobile ? "Pp" : "PPpp";
+    const dateFormat = isMobile ? "p" : "PPp";
 
     return (
     <div className="p-3 rounded-lg border bg-card">
-        <div className="flex flex-wrap justify-between items-start gap-x-4 gap-y-2">
-            <div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div className="col-span-2 sm:col-span-1">
                 <p className="font-bold text-lg">{bill.table === 'Parcel' ? 'Parcel' : `Table ${bill.table}`}</p>
                 <p className="text-sm text-muted-foreground">{format(new Date(bill.date), dateFormat)}</p>
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="col-span-2 sm:col-span-1 sm:text-right">
                 <p className="font-bold text-lg">Rs.{bill.totalAmount.toFixed(2)}</p>
-                <div className="flex items-center justify-end gap-1 text-sm text-muted-foreground mt-1">
+                <div className="flex items-center sm:justify-end gap-1 text-sm text-muted-foreground mt-1">
                     {bill.paymentMethod === 'Cash' ? <Landmark className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                     <span>{bill.paymentMethod}</span>
                 </div>
