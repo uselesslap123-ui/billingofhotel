@@ -6,7 +6,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, QrCode } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -225,7 +225,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
           {items.length > 0 && (
             <>
               <Separator />
-              <div className="space-y-2">
+              <div className="space-y-2 pt-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span className="font-medium">Rs.{subtotal.toFixed(2)}</span>
@@ -242,7 +242,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
               </div>
             </>
           )}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 pt-2">
             <Dialog open={isSettleDialogOpen} onOpenChange={(open) => { if(!open) { setIsSettleDialogOpen(false); setBillNumber(''); } }}>
               <DialogTrigger asChild>
                 <Button size="lg" className="w-full text-base sm:text-sm" onClick={handleSettleBill} disabled={items.length === 0}>
