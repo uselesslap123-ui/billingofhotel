@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, NotebookText } from "lucide-react";
+import { History, Landmark, CreditCard } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -16,21 +16,26 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PaymentHistoryDialogProps {
     paymentHistory: SettledBill[];
     udhariBills: UdhariBill[];
 }
 
-const SettledBillCard = ({ bill }: { bill: SettledBill }) => (
+const SettledBillCard = ({ bill }: { bill: SettledBill }) => {
+    const isMobile = useIsMobile();
+    const dateFormat = isMobile ? "Pp" : "PPpp";
+
+    return (
     <div className="p-3 rounded-lg border bg-card">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap justify-between items-start gap-x-4 gap-y-2">
             <div>
                 <p className="font-bold text-lg">{bill.table === 'Parcel' ? 'Parcel' : `Table ${bill.table}`}</p>
-                <p className="text-sm text-muted-foreground">{format(new Date(bill.date), "PPpp")}</p>
+                <p className="text-sm text-muted-foreground">{format(new Date(bill.date), dateFormat)}</p>
             </div>
-            <div className="text-right">
+            <div className="text-right flex-shrink-0">
                 <p className="font-bold text-lg">Rs.{bill.totalAmount.toFixed(2)}</p>
                 <div className="flex items-center justify-end gap-1 text-sm text-muted-foreground mt-1">
                     {bill.paymentMethod === 'Cash' ? <Landmark className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
@@ -50,7 +55,7 @@ const SettledBillCard = ({ bill }: { bill: SettledBill }) => (
             </ul>
         </details>
     </div>
-);
+)};
 
 const SummaryCard = ({ title, data }: { title: string, data: any }) => (
     <Card>
@@ -118,7 +123,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     <span className="hidden sm:inline">View History</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-4xl">
+            <DialogContent className="max-w-md md:max-w-2xl lg:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle className="font-headline text-2xl">Income & History</DialogTitle>
                 </DialogHeader>
