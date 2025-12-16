@@ -102,7 +102,7 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
                   <div className="flex-grow">
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      ₹{item.price.toFixed(2)}
+                      Rs.{item.price.toFixed(2)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -144,16 +144,16 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-medium">₹{subtotal.toFixed(2)}</span>
+                  <span className="font-medium">Rs.{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>GST ({(GST_RATE * 100).toFixed(0)}%)</span>
-                  <span className="font-medium">₹{gstAmount.toFixed(2)}</span>
+                  <span className="font-medium">Rs.{gstAmount.toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>₹{totalAmount.toFixed(2)}</span>
+                  <span>Rs.{totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </>
@@ -196,8 +196,8 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
                         <tr key={item.id}>
                           <td className="py-1">{item.name}</td>
                           <td className="text-center py-1">{item.quantity}</td>
-                          <td className="text-right py-1">₹{item.price.toFixed(2)}</td>
-                          <td className="text-right py-1">₹{(item.price * item.quantity).toFixed(2)}</td>
+                          <td className="text-right py-1">Rs.{item.price.toFixed(2)}</td>
+                          <td className="text-right py-1">Rs.{(item.price * item.quantity).toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -206,16 +206,16 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
                   <div className="text-xs space-y-1 mt-2">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span>₹{subtotal.toFixed(2)}</span>
+                      <span>Rs.{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                      <span>₹{gstAmount.toFixed(2)}</span>
+                      <span>Rs.{gstAmount.toFixed(2)}</span>
                     </div>
                     <Separator className="my-1 bg-gray-300" />
                      <div className="flex justify-between font-bold">
                       <span>TOTAL:</span>
-                      <span>₹{totalAmount.toFixed(2)}</span>
+                      <span>Rs.{totalAmount.toFixed(2)}</span>
                     </div>
                   </div>
                    <Separator className="my-2 bg-gray-300" />

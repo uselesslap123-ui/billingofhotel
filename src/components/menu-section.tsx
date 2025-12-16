@@ -24,7 +24,7 @@ export function MenuSection({ onAddItem }: MenuSectionProps) {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-lg font-semibold">
-                  ₹{item.price.toFixed(2)}
+                  Rs.{item.price.toFixed(2)}
                 </p>
               </CardContent>
               <CardFooter>
