@@ -50,7 +50,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
     if (items.length === 0) {
       toast({
         title: "Empty Bill",
-        description: "Please add items to the bill before generating.",
+        description: `Please add items to the ${activeTable === 'Parcel' ? 'parcel' : `bill for Table ${activeTable}`} before generating.`,
         variant: "destructive",
       });
       return false;
@@ -86,11 +86,13 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
     }
   };
 
+  const isParcel = activeTable === 'Parcel';
+
   return (
     <Card className="sticky top-20 shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-xl flex justify-between items-center">
-          <span>Table {activeTable} Bill</span>
+          <span>{isParcel ? 'Parcel Bill' : `Table ${activeTable} Bill`}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -105,7 +107,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
             <div className="space-y-3">
               {items.length === 0 && (
                 <p className="text-center text-muted-foreground py-10">
-                  No items added for Table {activeTable}.
+                  No items added for {isParcel ? 'this parcel' : `Table ${activeTable}`}.
                 </p>
               )}
               {items.map((item) => (
@@ -192,7 +194,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
                     <p><strong>Date:</strong> {billDate}</p>
                   </div>
                   <div className="flex justify-between text-xs mb-2">
-                    <p><strong>Table No:</strong> {activeTable}</p>
+                    <p><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</p>
                     {customerName && <p><strong>Customer:</strong> {customerName}</p>}
                   </div>
                   <Separator className="my-2 bg-gray-300"/>

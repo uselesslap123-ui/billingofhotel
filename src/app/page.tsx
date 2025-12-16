@@ -14,7 +14,7 @@ export type Bills = {
   [table: string]: BillItem[];
 };
 
-const TOTAL_TABLES = Array.from({ length: 8 }, (_, i) => (i + 1).toString());
+const TOTAL_TABLES = [...Array.from({ length: 8 }, (_, i) => (i + 1).toString()), 'Parcel'];
 
 export default function Home() {
   const [bills, setBills] = useState<Bills>({});
