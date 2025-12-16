@@ -2,12 +2,12 @@
 "use client";
 
 import { useMemo } from "react";
-import type { SettledBill, UdhariBill } from "@/app/page";
+import type { SettledBill, UdhariBill, BillItem } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, X } from "lucide-react";
+import { History, Landmark, CreditCard, X, TrendingUp, BarChart } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -17,8 +17,9 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 interface PaymentHistoryDialogProps {
     paymentHistory: SettledBill[];
@@ -88,6 +89,13 @@ const SummaryCard = ({ title, data }: { title: string, data: any }) => (
     </Card>
 )
 
+type ItemSalesReport = {
+    [itemName: string]: {
+        quantity: number;
+        total: number;
+    }
+}
+
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
     const cashPayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Cash'), [paymentHistory]);
     const onlinePayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Online'), [paymentHistory]);
@@ -122,6 +130,22 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         return calculateTotals(paymentHistory, udhariBills);
     }, [paymentHistory, udhariBills]);
 
+    const itemSalesReport = useMemo(() => {
+        const report: ItemSalesReport = {};
+        paymentHistory.forEach(bill => {
+            bill.items.forEach(item => {
+                if(!report[item.name]) {
+                    report[item.name] = { quantity: 0, total: 0 };
+                }
+                report[item.name].quantity += item.quantity;
+                report[item.name].total += item.price * item.quantity;
+            });
+        });
+        return Object.entries(report).sort(([,a], [,b]) => b.quantity - a.quantity);
+    }, [paymentHistory]);
+
+    const mostSellingItems = useMemo(() => itemSalesReport.slice(0, 5), [itemSalesReport]);
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -145,10 +169,11 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     <SummaryCard title="All Time Summary" data={allTimeData} />
                 </div>
                 <Tabs defaultValue="all" className="mt-4">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="all">All Payments ({paymentHistory.length})</TabsTrigger>
                         <TabsTrigger value="cash">Cash ({cashPayments.length})</TabsTrigger>
                         <TabsTrigger value="online">Online ({onlinePayments.length})</TabsTrigger>
+                        <TabsTrigger value="reports"><BarChart className="mr-2 h-4 w-4" />Reports</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="all">
@@ -185,6 +210,78 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                                 </div>
                             )}
                         </ScrollArea>
+                    </TabsContent>
+                    
+                    <TabsContent value="reports">
+                        <div className="h-[40vh] mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2">
+                                <h3 className="font-headline text-lg mb-2">Item-wise Sales Report</h3>
+                                <ScrollArea className="h-full pr-4 -mr-4">
+                                     {itemSalesReport.length === 0 ? (
+                                        <p className="text-center text-muted-foreground py-10">No sales data to generate report.</p>
+                                    ) : (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Item</TableHead>
+                                                    <TableHead className="text-right">Quantity Sold</TableHead>
+                                                    <TableHead className="text-right">Total Revenue</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {itemSalesReport.map(([name, data]) => (
+                                                    <TableRow key={name}>
+                                                        <TableCell className="font-medium">{name}</TableCell>
+                                                        <TableCell className="text-right">{data.quantity}</TableCell>
+                                                        <TableCell className="text-right">Rs.{data.total.toFixed(2)}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                </ScrollArea>
+                            </div>
+                            <div className="space-y-4">
+                               <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg flex items-center"><TrendingUp className="mr-2 h-5 w-5"/>Most Selling Items</CardTitle>
+                                        <CardDescription>Top 5 by quantity sold</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {mostSellingItems.length > 0 ? (
+                                            <ul className="space-y-2 text-sm">
+                                                {mostSellingItems.map(([name, data]) => (
+                                                    <li key={name} className="flex justify-between">
+                                                        <span>{name}</span>
+                                                        <span className="font-bold">{data.quantity} sold</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : <p className="text-sm text-muted-foreground">No items sold yet.</p>}
+                                    </CardContent>
+                                </Card>
+                                 <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">Payment Totals</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-sm space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2"><Landmark className="h-4 w-4 text-muted-foreground"/> Cash</div>
+                                            <span className="font-bold">Rs.{allTimeData.cash.toFixed(2)}</span>
+                                        </div>
+                                         <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-muted-foreground"/> Online</div>
+                                            <span className="font-bold">Rs.{allTimeData.online.toFixed(2)}</span>
+                                        </div>
+                                        <Separator className="my-2" />
+                                        <div className="flex justify-between items-center font-bold text-base">
+                                            <span>Total</span>
+                                            <span>Rs.{(allTimeData.cash + allTimeData.online).toFixed(2)}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </DialogContent>
