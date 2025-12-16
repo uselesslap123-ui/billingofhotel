@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { MenuItem } from "@/lib/menu-items";
 import { MenuSection } from "@/components/menu-section";
 import { BillingSection } from "@/components/billing-section";
@@ -43,6 +43,49 @@ export default function Home() {
   const [udhariBills, setUdhariBills] = useState<UdhariBill[]>([]);
   const [settledUdhariBills, setSettledUdhariBills] = useState<UdhariBill[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<SettledBill[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedBills = localStorage.getItem('bills');
+      const savedUdhariBills = localStorage.getItem('udhariBills');
+      const savedSettledUdhariBills = localStorage.getItem('settledUdhariBills');
+      const savedPaymentHistory = localStorage.getItem('paymentHistory');
+
+      if (savedBills) setBills(JSON.parse(savedBills));
+      if (savedUdhariBills) setUdhariBills(JSON.parse(savedUdhariBills));
+      if (savedSettledUdhariBills) setSettledUdhariBills(JSON.parse(savedSettledUdhariBills));
+      if (savedPaymentHistory) setPaymentHistory(JSON.parse(savedPaymentHistory));
+    } catch (error) {
+      console.error("Failed to load data from localStorage", error);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('bills', JSON.stringify(bills));
+    }
+  }, [bills, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('udhariBills', JSON.stringify(udhariBills));
+    }
+  }, [udhariBills, isLoaded]);
+  
+  useEffect(() => {
+    if (isLoaded) {
+        localStorage.setItem('settledUdhariBills', JSON.stringify(settledUdhariBills));
+    }
+  }, [settledUdhariBills, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('paymentHistory', JSON.stringify(paymentHistory));
+    }
+  }, [paymentHistory, isLoaded]);
+
 
   const addToBill = (item: MenuItem) => {
     setBills((prevBills) => {
@@ -131,6 +174,13 @@ export default function Home() {
   }
 
   const billedTables = Array.from(Object.keys(bills));
+  
+  if (!isLoaded) {
+    return <div className="min-h-screen flex items-center justify-center bg-background">
+        <UtensilsCrossed className="h-12 w-12 text-primary animate-pulse" />
+    </div>;
+  }
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -162,9 +212,6 @@ export default function Home() {
           <div className="lg:col-span-3 space-y-8">
              <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
                 <div className="animate-marquee whitespace-nowrap">
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
                   <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
                 </div>
              </div>
