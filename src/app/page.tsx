@@ -70,7 +70,10 @@ export default function Home() {
       if (savedPaymentHistory) setPaymentHistory(prev => [...prev, ...JSON.parse(savedPaymentHistory)]);
       if (savedNotes) setNotes(JSON.parse(savedNotes));
       if (savedTables) {
-        setTables(JSON.parse(savedTables));
+        const parsedTables = JSON.parse(savedTables);
+        if(Array.isArray(parsedTables) && parsedTables.length > 0) {
+            setTables(parsedTables);
+        }
       }
 
     } catch (error) {
@@ -142,7 +145,6 @@ export default function Home() {
   const handleAddTable = () => {
     setTables(prevTables => {
       const numericTables = prevTables
-        .filter(t => t !== 'Parcel')
         .map(t => parseInt(t, 10))
         .filter(t => !isNaN(t));
       
@@ -157,6 +159,24 @@ export default function Home() {
         newTables.push(nextTableNumber.toString());
       }
       return newTables;
+    });
+  };
+
+  const handleDeleteTable = (tableToDelete: string) => {
+    setTables(prevTables => {
+      const newTables = prevTables.filter(t => t !== tableToDelete);
+      // If the deleted table was the active one, switch to another table.
+      if (activeTable === tableToDelete) {
+        setActiveTable(newTables[0] || '1');
+      }
+      return newTables;
+    });
+
+    // Also remove any bill associated with that table
+    setBills(prevBills => {
+      const newBills = { ...prevBills };
+      delete newBills[tableToDelete];
+      return newBills;
     });
   };
 
@@ -327,6 +347,7 @@ export default function Home() {
               billedTables={billedTables}
               onSelectTable={setActiveTable}
               onAddTable={handleAddTable}
+              onDeleteTable={handleDeleteTable}
             />
             <MenuSection onAddItem={addToBill} billItems={bills[activeTable] || []} />
           </div>
@@ -352,3 +373,4 @@ export default function Home() {
   );
 }
 
+    
