@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import type { MenuItem } from "@/lib/menu-items";
 import { menuItems } from "@/lib/menu-items";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 
 interface MenuSectionProps {
@@ -9,14 +13,28 @@ interface MenuSectionProps {
 }
 
 export function MenuSection({ onAddItem }: MenuSectionProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <section aria-labelledby="menu-heading">
       <div className="bg-card p-4 rounded-lg shadow-sm">
-        <h2 id="menu-heading" className="text-xl font-bold font-headline mb-4">
-          Menu
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 id="menu-heading" className="text-xl font-bold font-headline">
+            Menu
+          </h2>
+          <Input
+            placeholder="Search menu..."
+            className="max-w-xs"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <Card key={item.id} className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
               <CardHeader className="flex-row items-start justify-between pb-2">
                 <CardTitle className="text-base font-medium">{item.name}</CardTitle>
