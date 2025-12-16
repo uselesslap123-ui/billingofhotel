@@ -92,34 +92,43 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / canvasHeight;
-        
-        let imgWidth = pdfWidth;
-        let imgHeight = imgWidth / ratio;
-        
+        const imgHeight = pdfWidth / ratio;
         let heightLeft = imgHeight;
         let position = 0;
-
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-
+  
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
+  
         while (heightLeft > 0) {
           position = heightLeft - imgHeight;
           pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pdfHeight;
+          pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+          heightLeft -= pdf.internal.pageSize.getHeight();
         }
-        
         pdf.save(`bill-${billNumber}.pdf`);
       });
     }
   };
 
   const handlePrint = () => {
-    window.print();
+    const input = billContentRef.current;
+    if (input) {
+      const printWindow = window.open('', '_blank');
+      printWindow?.document.write('<html><head><title>Print Bill</title>');
+      printWindow?.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; } #bill-to-print { font-family: sans-serif; } }</style>');
+      printWindow?.document.write('</head><body>');
+      printWindow?.document.write(input.innerHTML);
+      printWindow?.document.write('</body></html>');
+      printWindow?.document.close();
+      printWindow?.focus();
+      setTimeout(() => {
+        printWindow?.print();
+        printWindow?.close();
+      }, 250);
+    }
   };
 
   const handleSaveToUdhari = () => {
@@ -254,8 +263,8 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   <DialogHeader>
                     <DialogTitle className="font-headline">Bill & Payment Options</DialogTitle>
                   </DialogHeader>
-                  <div className="flex-grow overflow-y-auto pr-6 -mr-6">
-                    <div id="bill-to-print" ref={billContentRef} className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
+                  <div className="flex-grow overflow-y-auto pr-6 -mr-6" ref={billContentRef}>
+                    <div id="bill-to-print" className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
                       <div className="text-center mb-6">
                         <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
                         <p className="text-sm text-gray-500">Official Bill Receipt</p>
@@ -307,12 +316,10 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                     </div>
                   </div>
-                  <DialogFooter className="pt-4 sm:justify-between flex-wrap items-center justify-between gap-2">
-                     <div className="flex gap-2 justify-start">
+                  <DialogFooter className="pt-4 flex-wrap items-center justify-center gap-2">
+                     <div className="flex gap-2 justify-center flex-wrap">
                        <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
                        <Button variant="secondary" size="sm" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
-                     </div>
-                     <div className="flex gap-2 justify-end">
                         <Dialog>
                            <DialogTrigger asChild>
                               <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
@@ -352,6 +359,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
-
 
     
