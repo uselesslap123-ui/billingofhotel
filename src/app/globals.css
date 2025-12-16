@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -84,20 +85,4 @@
     white-space: nowrap;
   }
 }
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #bill-to-print, #bill-to-print * {
-    visibility: visible;
-  }
-  #bill-to-print {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-}
-
     

@@ -192,7 +192,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const downloadPDF = () => {
         const input = historyTableRef.current;
         if (input) {
-            html2canvas(input, { scale: 2 }).then((canvas) => {
+            html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -379,8 +379,8 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                 </div>
 
                 {/* Hidden content for PDF generation */}
-                <div className="absolute -left-[9999px] top-0 opacity-0 w-[1000px]" ref={historyTableRef}>
-                     <div className="p-8 bg-white text-black font-sans">
+                <div className="opacity-0 absolute top-0 left-0 h-0 w-0 overflow-hidden" >
+                    <div ref={historyTableRef} className="p-8 bg-white text-black font-sans w-[1000px]">
                         <h2 className="text-3xl font-bold text-center mb-6">Hisab-Kitab Report</h2>
                         <p className="text-center text-sm text-gray-500 mb-8">Generated on: {format(new Date(), "PPpp")}</p>
 
@@ -485,4 +485,3 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     );
 }
 
-    
