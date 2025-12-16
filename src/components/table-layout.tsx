@@ -46,6 +46,9 @@ export function TableLayout({ tables, activeTable, billedTables, onSelectTable, 
             const hasBill = billedTables.includes(table);
             const isActive = activeTable === table;
             const isParcel = table === 'Parcel';
+            const tableNumber = parseInt(table, 10);
+            const canBeDeleted = !isParcel && !isNaN(tableNumber) && tableNumber > 8;
+
             return (
               <div key={table} className="relative group/table">
                 <Button
@@ -61,7 +64,7 @@ export function TableLayout({ tables, activeTable, billedTables, onSelectTable, 
                   {isParcel ? <Package className="h-5 w-5 mb-1" /> : null}
                   <span>{table}</span>
                 </Button>
-                {!isParcel && (
+                {canBeDeleted && (
                    <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
