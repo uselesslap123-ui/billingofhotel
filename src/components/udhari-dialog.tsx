@@ -7,6 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
+import { NotebookText } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,27 +27,30 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-interface UdhariSectionProps {
+interface UdhariDialogProps {
     udhariBills: UdhariBill[];
     onSettleUdhari: (udhariId: string) => void;
 }
 
-export function UdhariSection({ udhariBills, onSettleUdhari }: UdhariSectionProps) {
+export function UdhariDialog({ udhariBills, onSettleUdhari }: UdhariDialogProps) {
 
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
 
-    if (udhariBills.length === 0) {
-        return null;
-    }
-
     return (
-        <Card className="shadow-sm">
-            <CardHeader className="flex flex-row justify-between items-center">
-                <CardTitle className="font-headline text-xl">Udhari (Credit) List</CardTitle>
-                <div className="text-lg font-bold">Total: Rs.{totalUdhari.toFixed(2)}</div>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-72">
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <NotebookText className="mr-2 h-4 w-4" /> View Udhari ({udhariBills.length})
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-2xl flex justify-between items-center pr-8">
+                        <span>Udhari (Credit) List</span>
+                        <div className="text-lg font-bold">Total: Rs.{totalUdhari.toFixed(2)}</div>
+                    </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="h-[60vh] mt-4 pr-6">
                     {udhariBills.length === 0 ? (
                         <p className="text-center text-muted-foreground py-10">No Udhari bills yet.</p>
                     ) : (
@@ -90,7 +101,7 @@ export function UdhariSection({ udhariBills, onSettleUdhari }: UdhariSectionProp
                         </div>
                     )}
                 </ScrollArea>
-            </CardContent>
-        </Card>
+            </DialogContent>
+        </Dialog>
     );
 }

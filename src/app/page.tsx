@@ -5,9 +5,11 @@ import { useState } from "react";
 import type { MenuItem } from "@/lib/menu-items";
 import { MenuSection } from "@/components/menu-section";
 import { BillingSection } from "@/components/billing-section";
-import { UdhariSection } from "@/components/udhari-section";
+import { UdhariDialog } from "@/components/udhari-dialog";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
+import { Button } from "@/components/ui/button";
+import { NotebookText } from "lucide-react";
 
 export type BillItem = MenuItem & { quantity: number };
 
@@ -100,8 +102,11 @@ export default function Home() {
                 हॉटेल सुग्ररण
               </h1>
             </div>
-            <div className="font-headline text-muted-foreground">
-              डिजिटल हॉटेल सुविधार
+            <div className="flex items-center gap-4">
+               <UdhariDialog udhariBills={udhariBills} onSettleUdhari={settleUdhari} />
+              <div className="font-headline text-muted-foreground hidden sm:block">
+                डिजिटल हॉटेल सुविधार
+              </div>
             </div>
           </div>
         </div>
@@ -117,7 +122,6 @@ export default function Home() {
               onSelectTable={setActiveTable}
             />
             <MenuSection onAddItem={addToBill} />
-            <UdhariSection udhariBills={udhariBills} onSettleUdhari={settleUdhari} />
           </div>
           <div className="lg:col-span-2">
             <BillingSection
