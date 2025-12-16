@@ -55,8 +55,8 @@ export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
                   <Plus className="mr-2 h-4 w-4" /> 
                   <span>Add to Bill</span>
                    {quantity > 0 && (
-                    <span className="ml-auto text-sm font-normal text-muted-foreground">
-                      x {quantity}
+                    <span className="ml-auto bg-primary/10 text-primary font-bold text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {quantity}
                     </span>
                   )}
                 </Button>
