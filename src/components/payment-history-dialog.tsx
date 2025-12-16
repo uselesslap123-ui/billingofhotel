@@ -170,7 +170,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         <SummaryCard title="All Time Summary" data={allTimeData} />
                     </div>
                     <Tabs defaultValue="all" className="mt-4">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+                        <TabsList className="h-auto flex-wrap justify-center">
                             <TabsTrigger value="all">All Payments ({paymentHistory.length})</TabsTrigger>
                             <TabsTrigger value="cash">Cash ({cashPayments.length})</TabsTrigger>
                             <TabsTrigger value="online">Online ({onlinePayments.length})</TabsTrigger>
