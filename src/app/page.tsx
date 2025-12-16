@@ -10,6 +10,7 @@ import { PaymentHistoryDialog } from "@/components/payment-history-dialog";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
 import { CurrentBillsDialog } from "@/components/current-bills-dialog";
+import Image from "next/image";
 
 export type BillItem = MenuItem & { quantity: number };
 
@@ -159,6 +160,9 @@ export default function Home() {
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
+             <div className="flex justify-center -mb-4">
+               <Image src="/logo.png" alt="Hotel Sugaran Logo" width={100} height={100} className="rounded-full shadow-md" />
+             </div>
              <TableLayout
               tables={TOTAL_TABLES}
               activeTable={activeTable}
