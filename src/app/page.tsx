@@ -8,8 +8,6 @@ import { BillingSection } from "@/components/billing-section";
 import { UdhariDialog } from "@/components/udhari-dialog";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
-import { Button } from "@/components/ui/button";
-import { NotebookText } from "lucide-react";
 
 export type BillItem = MenuItem & { quantity: number };
 
@@ -31,6 +29,7 @@ export default function Home() {
   const [bills, setBills] = useState<Bills>({});
   const [activeTable, setActiveTable] = useState("1");
   const [udhariBills, setUdhariBills] = useState<UdhariBill[]>([]);
+  const [settledUdhariBills, setSettledUdhariBills] = useState<UdhariBill[]>([]);
 
   const addToBill = (item: MenuItem) => {
     setBills((prevBills) => {
@@ -106,7 +105,11 @@ export default function Home() {
   }
 
   const settleUdhari = (udhariId: string) => {
-    setUdhariBills(prev => prev.filter(bill => bill.id !== udhariId));
+    const billToSettle = udhariBills.find(bill => bill.id === udhariId);
+    if(billToSettle) {
+        setSettledUdhariBills(prev => [billToSettle, ...prev]);
+        setUdhariBills(prev => prev.filter(bill => bill.id !== udhariId));
+    }
   }
 
   const billedTables = Array.from(Object.keys(bills));
@@ -123,7 +126,12 @@ export default function Home() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
-               <UdhariDialog udhariBills={udhariBills} onAddToBill={addUdhariToBill} activeTable={activeTable} />
+               <UdhariDialog 
+                  udhariBills={udhariBills} 
+                  settledUdhariBills={settledUdhariBills}
+                  onAddToBill={addUdhariToBill} 
+                  activeTable={activeTable} 
+               />
               <div className="font-headline text-muted-foreground hidden sm:block">
                 डिजिटल हॉटेल सुविधार
               </div>
