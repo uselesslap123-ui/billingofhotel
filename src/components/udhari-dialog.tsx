@@ -53,7 +53,7 @@ const UdhariBillCard = ({ bill, onAddToBill, activeTable }: { bill: UdhariBill, 
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will add the udhari of Rs.{bill.totalAmount.toFixed(2)} for {bill.customerName} to the current bill for Table {activeTable} and settle this udhari.
+                                    This will add the udhari of Rs.{bill.totalAmount.toFixed(2)} for {bill.customerName} to the current bill for {activeTable === 'Parcel' ? 'the parcel' : `Table ${activeTable}`} and settle this udhari.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -90,7 +90,8 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <NotebookText className="mr-2 h-4 w-4" /> View Udhari ({udhariBills.length})
+                    <NotebookText className="mr-0 sm:mr-2 h-4 w-4" /> 
+                    <span className="hidden sm:inline">View Udhari ({udhariBills.length})</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-2xl">

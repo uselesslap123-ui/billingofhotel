@@ -62,7 +62,8 @@ export function PaymentHistoryDialog({ paymentHistory }: PaymentHistoryDialogPro
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <History className="mr-2 h-4 w-4" /> View History
+                    <History className="mr-0 sm:mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">View History</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-2xl">
