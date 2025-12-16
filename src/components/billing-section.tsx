@@ -88,19 +88,31 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const handleDownloadPdf = () => {
     const input = billContentRef.current;
     if (input) {
-      html2canvas(input, { scale: 2 }).then((canvas) => {
+      html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / canvasHeight;
-        const width = pdfWidth;
-        const height = width / ratio;
         
-        let finalHeight = height > pdf.internal.pageSize.getHeight() ? pdf.internal.pageSize.getHeight() : height;
+        const imgWidth = pdfWidth;
+        const imgHeight = imgWidth / ratio;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
 
-        pdf.addImage(imgData, "PNG", 0, 0, width, finalHeight);
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+          heightLeft -= pdfHeight;
+        }
+        
         pdf.save(`bill-${billNumber}.pdf`);
       });
     }
@@ -340,3 +352,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
+
+    
