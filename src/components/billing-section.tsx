@@ -294,17 +294,17 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                         <div className="mt-2 p-2 bg-white inline-block rounded-lg shadow-md border">
                           <QRCode 
                             value={upiUrl} 
-                            size={140} 
+                            size={128} 
                             quietZone={10}
                             qrStyle="dots"
                             eyeRadius={[
-                              { outer: 10, inner: 0 },
-                              { outer: 10, inner: 0 },
-                              { outer: 10, inner: 0 },
+                              { outer: 0, inner: 10 },
+                              { outer: 0, inner: 10 },
+                              { outer: 0, inner: 10 },
                             ]}
                             logoImage={logoDataUri}
-                            logoWidth={35}
-                            logoHeight={35}
+                            logoWidth={30}
+                            logoHeight={30}
                             logoPadding={5}
                             logoPaddingStyle="circle"
                             fgColor="#004d4d"
@@ -340,6 +340,8 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
+
+    
 
     
 
