@@ -1,19 +1,22 @@
 
 "use client";
 
+import { useState } from "react";
 import type { UdhariBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
-import { NotebookText, NotebookPen } from "lucide-react";
+import { NotebookText, NotebookPen, MessageSquareText, FilePenLine } from "lucide-react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
     DialogTrigger,
+    DialogClose,
 } from "@/components/ui/dialog";
 import {
     AlertDialog,
@@ -36,9 +39,33 @@ interface UdhariDialogProps {
     activeTable: string;
     notepad: string;
     onNotepadChange: (value: string) => void;
+    onUpdateUdhariNotes: (udhariId: string, notes: string) => void;
 }
 
-const UdhariBillCard = ({ bill, onAddToBill, activeTable }: { bill: UdhariBill, onAddToBill?: (udhariBill: UdhariBill) => void, activeTable?: string }) => (
+const UdhariBillNotepad = ({ bill, onSave }: { bill: UdhariBill, onSave: (notes: string) => void }) => {
+    const [notes, setNotes] = useState(bill.notes || "");
+    
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Notes for {bill.customerName}</DialogTitle>
+            </DialogHeader>
+            <Textarea
+                placeholder="Add notes for this udhari bill..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={6}
+            />
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button onClick={() => onSave(notes)}>Save Notes</Button>
+                </DialogClose>
+            </DialogFooter>
+        </DialogContent>
+    )
+}
+
+const UdhariBillCard = ({ bill, onAddToBill, activeTable, onUpdateUdhariNotes }: { bill: UdhariBill, onAddToBill?: (udhariBill: UdhariBill) => void, activeTable?: string, onUpdateUdhariNotes: (udhariId: string, notes: string) => void }) => (
     <div className="p-3 rounded-lg border bg-card">
         <div className="flex justify-between items-start">
             <div>
@@ -71,21 +98,32 @@ const UdhariBillCard = ({ bill, onAddToBill, activeTable }: { bill: UdhariBill, 
             </div>
         </div>
         <Separator className="my-2" />
-        <details>
-            <summary className="text-sm font-medium cursor-pointer">View Items ({bill.items.length})</summary>
-            <ul className="mt-2 ml-4 text-sm text-muted-foreground list-disc space-y-1">
-                {bill.items.map(item => (
-                    <li key={item.id}>
-                        {item.name} x {item.quantity} - Rs.{(item.price * item.quantity).toFixed(2)}
-                    </li>
-                ))}
-            </ul>
-        </details>
+        <div className="flex justify-between items-center">
+            <details>
+                <summary className="text-sm font-medium cursor-pointer">View Items ({bill.items.length})</summary>
+                <ul className="mt-2 ml-4 text-sm text-muted-foreground list-disc space-y-1">
+                    {bill.items.map(item => (
+                        <li key={item.id}>
+                            {item.name} x {item.quantity} - Rs.{(item.price * item.quantity).toFixed(2)}
+                        </li>
+                    ))}
+                </ul>
+            </details>
+             <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant={bill.notes ? "secondary" : "ghost"} size="sm" className="gap-2">
+                        {bill.notes ? <MessageSquareText className="h-4 w-4" /> : <FilePenLine className="h-4 w-4" />}
+                        Notes
+                    </Button>
+                </DialogTrigger>
+                <UdhariBillNotepad bill={bill} onSave={(notes) => onUpdateUdhariNotes(bill.id, notes)} />
+            </Dialog>
+        </div>
     </div>
 );
 
 
-export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable, notepad, onNotepadChange }: UdhariDialogProps) {
+export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable, notepad, onNotepadChange, onUpdateUdhariNotes }: UdhariDialogProps) {
 
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
 
@@ -120,7 +158,7 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
                             ) : (
                                 <div className="space-y-4">
                                     {udhariBills.map(bill => (
-                                        <UdhariBillCard key={bill.id} bill={bill} onAddToBill={onAddToBill} activeTable={activeTable} />
+                                        <UdhariBillCard key={bill.id} bill={bill} onAddToBill={onAddToBill} activeTable={activeTable} onUpdateUdhariNotes={onUpdateUdhariNotes} />
                                     ))}
                                 </div>
                             )}
@@ -133,7 +171,7 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
                             ) : (
                                 <div className="space-y-4">
                                     {settledUdhariBills.map(bill => (
-                                        <UdhariBillCard key={bill.id} bill={bill} />
+                                        <UdhariBillCard key={bill.id} bill={bill} onUpdateUdhariNotes={onUpdateUdhariNotes} />
                                     ))}
                                 </div>
                             )}

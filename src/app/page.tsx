@@ -24,6 +24,7 @@ export type UdhariBill = {
   items: BillItem[];
   totalAmount: number;
   date: string;
+  notes?: string;
 };
 
 export type SettledBill = {
@@ -197,6 +198,11 @@ export default function Home() {
         setUdhariBills(prev => prev.filter(bill => bill.id !== udhariId));
     }
   }
+  
+  const updateUdhariNotes = (udhariId: string, notes: string) => {
+    setUdhariBills(prev => prev.map(bill => bill.id === udhariId ? { ...bill, notes } : bill));
+  };
+
 
   const recordPayment = (settledBill: SettledBill) => {
     setPaymentHistory(prev => [settledBill, ...prev]);
@@ -232,6 +238,7 @@ export default function Home() {
                   activeTable={activeTable} 
                   notepad={notepad}
                   onNotepadChange={setNotepad}
+                  onUpdateUdhariNotes={updateUdhariNotes}
                />
                <PaymentHistoryDialog paymentHistory={paymentHistory} udhariBills={udhariBills} />
             </div>
@@ -274,5 +281,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

@@ -129,6 +129,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       items: items,
       totalAmount: totalAmount,
       date: new Date().toISOString(),
+      notes: "",
     };
     onSaveToUdhari(udhariBill);
     toast({
@@ -343,5 +344,3 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
-
-    
