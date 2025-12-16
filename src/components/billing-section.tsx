@@ -40,29 +40,36 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
     const [isQrOpen, setIsQrOpen] = useState(false);
     const [countdown, setCountdown] = useState(90);
     const { toast } = useToast();
+    const timerRef = useRef<NodeJS.Timeout>();
 
     useEffect(() => {
-        let timer: NodeJS.Timeout;
         if (isQrOpen) {
             setCountdown(90); 
-            timer = setInterval(() => {
-                setCountdown(prev => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        setIsQrOpen(false);
-                        toast({
-                            title: "QR Code Expired",
-                            description: "Please generate a new QR code to pay.",
-                            variant: "destructive",
-                        });
-                        return 0;
-                    }
-                    return prev - 1;
-                });
+            timerRef.current = setInterval(() => {
+                setCountdown(prev => prev > 0 ? prev - 1 : 0);
             }, 1000);
+        } else {
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+            }
         }
-        return () => clearInterval(timer);
-    }, [isQrOpen, toast]);
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        }
+    }, [isQrOpen]);
+
+    useEffect(() => {
+        if (countdown === 0 && isQrOpen) {
+            setIsQrOpen(false);
+            toast({
+                title: "QR Code Expired",
+                description: "Please generate a new QR code to pay.",
+                variant: "destructive",
+            });
+        }
+    }, [countdown, isQrOpen, toast]);
 
     return (
         <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
