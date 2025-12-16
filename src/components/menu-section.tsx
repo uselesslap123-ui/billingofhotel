@@ -74,7 +74,7 @@ export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
                 Menu
               </h2>
                {allCategoryKeys.length > 0 && (
-                <Button variant="outline" size="sm" onClick={toggleMenuExpansion} className="hidden sm:flex">
+                <Button variant="outline" size="sm" onClick={toggleMenuExpansion} className="flex">
                   {isMenuExpanded ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
                   {isMenuExpanded ? "Show Less" : "Show More"}
                 </Button>
