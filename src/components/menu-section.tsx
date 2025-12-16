@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
+import type { BillItem } from "@/app/page";
 
 interface MenuSectionProps {
   onAddItem: (item: MenuItem) => void;
+  billItems: BillItem[];
 }
 
-export function MenuSection({ onAddItem }: MenuSectionProps) {
+export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredMenuItems = menuItems.filter((item) =>
@@ -34,7 +36,10 @@ export function MenuSection({ onAddItem }: MenuSectionProps) {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredMenuItems.map((item) => (
+          {filteredMenuItems.map((item) => {
+            const currentItemInBill = billItems.find(billItem => billItem.id === item.id);
+            const quantity = currentItemInBill ? currentItemInBill.quantity : 0;
+            return (
             <Card key={item.id} className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
               <CardHeader className="flex-row items-start justify-between pb-2">
                 <CardTitle className="text-base font-medium">{item.name}</CardTitle>
@@ -47,11 +52,17 @@ export function MenuSection({ onAddItem }: MenuSectionProps) {
               </CardContent>
               <CardFooter>
                 <Button className="w-full" onClick={() => onAddItem(item)} variant="outline">
-                  <Plus className="mr-2 h-4 w-4" /> Add to Bill
+                  <Plus className="mr-2 h-4 w-4" /> 
+                  <span>Add to Bill</span>
+                   {quantity > 0 && (
+                    <span className="ml-auto text-sm font-normal text-muted-foreground">
+                      x {quantity}
+                    </span>
+                  )}
                 </Button>
               </CardFooter>
             </Card>
-          ))}
+          )})}
         </div>
       </div>
     </section>
