@@ -49,6 +49,10 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
 
   const gstAmount = useMemo(() => subtotal * GST_RATE, [subtotal]);
   const totalAmount = useMemo(() => subtotal + gstAmount, [subtotal, gstAmount]);
+  
+  const upiUrl = useMemo(() => {
+    return `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalAmount.toFixed(2)}&cu=INR`;
+  }, [totalAmount]);
 
   const handleGenerateBill = () => {
     if (items.length === 0) {
@@ -140,7 +144,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   };
 
   const isParcel = activeTable === 'Parcel';
-  const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalAmount.toFixed(2)}&cu=INR`;
   
   const logoSvg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="20" fill="white"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="60" font-weight="bold" fill="#008080">S</text></svg>`;
   const logoDataUri = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString('base64')}`;
@@ -296,16 +299,9 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                           <p className="text-sm font-semibold text-gray-700">Scan QR to Pay Online</p>
                           <div className="mt-2 p-2 bg-white inline-block rounded-lg shadow-md border">
                             <QRCode 
-                              value={upiUrl} 
+                              value={upiUrl}
                               size={100}
                               quietZone={10}
-                              qrStyle="dots"
-                              eyeRadius={[
-                                { outer: 0, inner: 10 },
-                                { outer: 0, inner: 10 },
-                                { outer: 0, inner: 10 },
-                                { outer: 0, inner: 10 },
-                              ]}
                               logoImage={logoDataUri}
                               logoWidth={25}
                               logoHeight={25}
