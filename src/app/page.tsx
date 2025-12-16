@@ -64,25 +64,41 @@ export default function Home() {
 
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('bills', JSON.stringify(bills));
+      try {
+        localStorage.setItem('bills', JSON.stringify(bills));
+      } catch (error) {
+        console.error("Failed to save bills to localStorage", error);
+      }
     }
   }, [bills, isLoaded]);
 
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('udhariBills', JSON.stringify(udhariBills));
+      try {
+        localStorage.setItem('udhariBills', JSON.stringify(udhariBills));
+      } catch (error) {
+        console.error("Failed to save udhariBills to localStorage", error);
+      }
     }
   }, [udhariBills, isLoaded]);
   
   useEffect(() => {
     if (isLoaded) {
+      try {
         localStorage.setItem('settledUdhariBills', JSON.stringify(settledUdhariBills));
+      } catch (error) {
+        console.error("Failed to save settledUdhariBills to localStorage", error);
+      }
     }
   }, [settledUdhariBills, isLoaded]);
 
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('paymentHistory', JSON.stringify(paymentHistory));
+      try {
+        localStorage.setItem('paymentHistory', JSON.stringify(paymentHistory));
+      } catch (error) {
+        console.error("Failed to save paymentHistory to localStorage", error);
+      }
     }
   }, [paymentHistory, isLoaded]);
 
@@ -201,7 +217,7 @@ export default function Home() {
                   onAddToBill={addUdhariToBill} 
                   activeTable={activeTable} 
                />
-               <PaymentHistoryDialog paymentHistory={paymentHistory} />
+               <PaymentHistoryDialog paymentHistory={paymentHistory} udhariBills={udhariBills} />
             </div>
           </div>
         </div>
@@ -211,8 +227,9 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
              <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
-                <div className="animate-marquee whitespace-nowrap">
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
+                <div className="flex animate-marquee">
+                    <span className="text-lg font-semibold text-primary px-4 whitespace-nowrap">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
+                    <span className="text-lg font-semibold text-primary px-4 whitespace-nowrap">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
                 </div>
              </div>
              <TableLayout
