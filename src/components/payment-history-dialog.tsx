@@ -117,6 +117,10 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const monthlyUdharis = udhariBills.filter(u => isThisMonth(new Date(u.date)));
         return calculateTotals(monthlyPayments, monthlyUdharis);
     }, [paymentHistory, udhariBills]);
+    
+    const allTimeData = useMemo(() => {
+        return calculateTotals(paymentHistory, udhariBills);
+    }, [paymentHistory, udhariBills]);
 
     return (
         <Dialog>
@@ -129,11 +133,16 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
             <DialogContent className="max-w-md md:max-w-2xl lg:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle className="font-headline text-2xl">Income &amp; History</DialogTitle>
+                     <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Close</span>
+                    </DialogClose>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                     <SummaryCard title="Today's Summary" data={dailyData} />
                     <SummaryCard title="This Week's Summary" data={weeklyData} />
                     <SummaryCard title="This Month's Summary" data={monthlyData} />
+                    <SummaryCard title="All Time Summary" data={allTimeData} />
                 </div>
                 <Tabs defaultValue="all" className="mt-4">
                     <TabsList className="grid w-full grid-cols-3">
@@ -182,5 +191,3 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </Dialog>
     );
 }
-
-    

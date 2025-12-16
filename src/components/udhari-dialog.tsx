@@ -188,6 +188,7 @@ const NoteEditor = ({ note, onUpdate, onDelete }: { note: Note, onUpdate: (conte
 export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable, notes, onAddNewNote, onUpdateNote, onDeleteNote, onUpdateUdhariNotes }: UdhariDialogProps) {
 
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
+    const totalSettledUdhari = settledUdhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
 
     return (
         <Dialog>
@@ -227,7 +228,11 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
                         </ScrollArea>
                     </TabsContent>
                     <TabsContent value="settled">
-                        <ScrollArea className="h-[60vh] pr-6">
+                         <div className="flex justify-between items-center pr-6 my-2">
+                            <span className="text-lg font-bold">Total Settled:</span>
+                            <span className="text-lg font-bold">Rs.{totalSettledUdhari.toFixed(2)}</span>
+                        </div>
+                        <ScrollArea className="h-[55vh] pr-6">
                             {settledUdhariBills.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-10">No settled Udhari bills yet.</p>
                             ) : (
@@ -267,5 +272,3 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
         </Dialog>
     );
 }
-
-    
