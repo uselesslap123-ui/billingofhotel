@@ -1,3 +1,76 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "paneer-butter-masala",
+      "description": "A rich and creamy dish of paneer (Indian cottage cheese) in a tomato, butter and cashew sauce.",
+      "imageUrl": "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYW5lZXIlMjBtYXNhbGF8ZW58MHx8fHwxNzY1ODgzNTM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "paneer masala"
+    },
+    {
+      "id": "dal-makhani",
+      "description": "A classic North Indian dish made with black lentils, red kidney beans, butter and cream.",
+      "imageUrl": "https://picsum.photos/seed/2/600/400",
+      "imageHint": "dal makhani"
+    },
+    {
+      "id": "garlic-naan",
+      "description": "Soft Indian flatbread topped with garlic and butter.",
+      "imageUrl": "https://images.unsplash.com/photo-1725483990172-e5203cc96ef5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxnYXJsaWMlMjBuYWFufGVufDB8fHx8MTc2NTg5MTQ0OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "garlic naan"
+    },
+    {
+      "id": "veg-biryani",
+      "description": "Aromatic rice dish with mixed vegetables, herbs and spices.",
+      "imageUrl": "https://images.unsplash.com/photo-1630409346824-4f0e7b080087?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx2ZWclMjBiaXJ5YW5pfGVufDB8fHx8MTc2NTg5NTgwNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "veg biryani"
+    },
+    {
+      "id": "gulab-jamun",
+      "description": "Deep-fried dough balls made from milk solids, soaked in an aromatic syrup.",
+      "imageUrl": "https://images.unsplash.com/photo-1666190092159-3171cf0fbb12?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxndWxhYiUyMGphbXVufGVufDB8fHx8MTc2NTg0ODI0MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gulab jamun"
+    },
+    {
+      "id": "masala-dosa",
+      "description": "A thin pancake or crepe, filled with a spicy potato filling.",
+      "imageUrl": "https://images.unsplash.com/photo-1743517894265-c86ab035adef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtYXNhbGElMjBkb3NhfGVufDB8fHx8MTc2NTg0ODI0MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "masala dosa"
+    },
+    {
+      "id": "chole-bhature",
+      "description": "A combination of spicy chickpeas and fried bread called bhatura.",
+      "imageUrl": "https://images.unsplash.com/photo-1644780398576-b73bfb3adc56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjaG9sZSUyMGJoYXR1cmV8ZW58MHx8fHwxNzY1OTAxMDY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chole bhature"
+    },
+    {
+      "id": "lassi",
+      "description": "A creamy, frothy yogurt-based drink, blended with water and various fruits or seasonings.",
+      "imageUrl": "https://images.unsplash.com/photo-1692620811917-664ebd27a8c8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsYXNzaSUyMGRyaW5rfGVufDB8fHx8MTc2NTgzMzM1NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lassi drink"
+    },
+    {
+      "id": "idli-sambhar",
+      "description": "A type of savoury rice cake, served with a lentil-based vegetable stew.",
+      "imageUrl": "https://images.unsplash.com/photo-1730191843435-073792ba22bc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxpZGxpJTIwc2FtYmhhcnxlbnwwfHx8fDE3NjU5MDk4NjF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "idli sambhar"
+    },
+    {
+      "id": "samosa",
+      "description": "A fried or baked pastry with a savory filling, such as spiced potatoes, onions, peas.",
+      "imageUrl": "https://images.unsplash.com/photo-1601050690597-df0568f70950?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzYW1vc2ElMjBmb29kfGVufDB8fHx8MTc2NTg5MTQ0OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "samosa food"
+    },
+    {
+      "id": "jalebi",
+      "description": "A spiral-shaped sweet made by deep-frying a wheat flour batter, which is then soaked in sugar syrup.",
+      "imageUrl": "https://images.unsplash.com/photo-1760263217153-ef719ca2da19?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxqYWxlYmklMjBzd2VldHxlbnwwfHx8fDE3NjU5MDk4NjF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "jalebi sweet"
+    },
+    {
+      "id": "mineral-water",
+      "description": "A bottle of purified mineral water.",
+      "imageUrl": "https://images.unsplash.com/photo-1530711654140-23ef9ad45094?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3YXRlciUyMGJvdHRsZXxlbnwwfHx8fDE3NjU4Mjg1NTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "water bottle"
+    }
+  ]
 }
