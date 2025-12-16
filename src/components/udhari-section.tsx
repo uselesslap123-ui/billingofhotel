@@ -28,6 +28,10 @@ export function UdhariSection({ udhariBills, onSettleUdhari }: UdhariSectionProp
 
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
 
+    if (udhariBills.length === 0) {
+        return null;
+    }
+
     return (
         <Card className="shadow-sm">
             <CardHeader className="flex flex-row justify-between items-center">
