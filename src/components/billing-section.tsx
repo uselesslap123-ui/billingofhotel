@@ -324,7 +324,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                            </DialogContent>
                         </Dialog>
                         <DialogClose asChild>
-                           <Button size="sm" variant="outline" onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
+                           <Button size="sm" variant="secondary" onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
                         </DialogClose>
                      </div>
                   </DialogFooter>
@@ -340,5 +340,3 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
-
-    
