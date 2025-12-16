@@ -151,9 +151,6 @@ export default function Home() {
                   activeTable={activeTable} 
                />
                <PaymentHistoryDialog paymentHistory={paymentHistory} />
-              <div className="font-headline text-muted-foreground hidden sm:block">
-                डिजिटल हॉटेल सुविधार
-              </div>
             </div>
           </div>
         </div>
