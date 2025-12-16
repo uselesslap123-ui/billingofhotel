@@ -2,11 +2,11 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import type { BillItem, UdhariBill } from "@/app/page";
+import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,12 +27,13 @@ interface BillingSectionProps {
   onUpdateQuantity: (itemId: number, quantity: number) => void;
   onClearBill: () => void;
   onSaveToUdhari: (udhariBill: UdhariBill) => void;
+  onRecordPayment: (settledBill: SettledBill) => void;
   activeTable: string;
 }
 
 const GST_RATE = 0.05; // 5%
 
-export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToUdhari, activeTable }: BillingSectionProps) {
+export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToUdhari, onRecordPayment, activeTable }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -60,10 +61,21 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     return true;
   };
 
-  const handleDialogClose = () => {
-    setBillNumber('');
-    onClearBill();
-  }
+  const handlePayment = (method: 'Cash' | 'Online') => {
+    const settledBill: SettledBill = {
+      id: `SETTLED-${Date.now()}`,
+      items: items,
+      totalAmount: totalAmount,
+      date: new Date().toISOString(),
+      paymentMethod: method,
+      table: activeTable
+    };
+    onRecordPayment(settledBill);
+    toast({
+      title: "Payment Recorded",
+      description: `Bill for ${activeTable === 'Parcel' ? 'Parcel' : `Table ${activeTable}`} of Rs.${totalAmount.toFixed(2)} paid by ${method}.`,
+    });
+  };
 
   const handleDownloadPdf = () => {
     const input = billContentRef.current;
@@ -131,7 +143,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       <CardContent>
         <div className="space-y-4">
           <Input
-            placeholder="Customer Name (Required for Udhari)"
+            placeholder="Customer Name (for Udhari/Invoice)"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
           />
@@ -204,8 +216,8 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
               </div>
             </>
           )}
-          <div className="flex gap-2">
-            <Dialog onOpenChange={(open) => !open && handleDialogClose()}>
+          <div className="grid grid-cols-2 gap-2">
+            <Dialog onOpenChange={(open) => !open && setBillNumber('')}>
               <DialogTrigger asChild>
                 <Button size="lg" className="w-full" onClick={handleGenerateBill} disabled={items.length === 0}>
                   <Printer className="mr-2 h-4 w-4" /> Generate Bill
@@ -214,7 +226,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
               {billNumber && (
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle className="font-headline">Bill Details</DialogTitle>
+                    <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                   </DialogHeader>
                   <div ref={billContentRef} className="p-6 bg-white text-black rounded-sm">
                     <div className="text-center mb-4">
@@ -270,18 +282,21 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                      <Separator className="my-2 bg-gray-300" />
                      <p className="text-center text-[10px] mt-4">Thank you for your visit!</p>
                   </div>
-                  <DialogFooter>
-                    <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
-                    <DialogClose asChild>
-                      <Button type="button">
-                        Close & Clear Bill
-                      </Button>
-                    </DialogClose>
+                  <DialogFooter className="sm:justify-between">
+                     <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
+                     <div className="flex gap-2">
+                        <DialogClose asChild>
+                           <Button onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
+                        </DialogClose>
+                        <DialogClose asChild>
+                           <Button onClick={() => handlePayment('Online')}><CreditCard className="mr-2 h-4 w-4" /> Paid Online</Button>
+                        </DialogClose>
+                     </div>
                   </DialogFooter>
                 </DialogContent>
               )}
             </Dialog>
-            <Button variant="secondary" onClick={handleSaveToUdhari} disabled={items.length === 0} className="w-full">
+            <Button variant="secondary" onClick={handleSaveToUdhari} disabled={items.length === 0}>
               <BookUser className="mr-2 h-4 w-4" /> Save to Udhari
             </Button>
           </div>

@@ -6,6 +6,7 @@ import type { MenuItem } from "@/lib/menu-items";
 import { MenuSection } from "@/components/menu-section";
 import { BillingSection } from "@/components/billing-section";
 import { UdhariDialog } from "@/components/udhari-dialog";
+import { PaymentHistoryDialog } from "@/components/payment-history-dialog";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
 
@@ -23,6 +24,15 @@ export type UdhariBill = {
   date: string;
 };
 
+export type SettledBill = {
+  id: string;
+  items: BillItem[];
+  totalAmount: number;
+  date: string;
+  paymentMethod: "Cash" | "Online";
+  table: string;
+};
+
 const TOTAL_TABLES = [...Array.from({ length: 8 }, (_, i) => (i + 1).toString()), 'Parcel'];
 
 export default function Home() {
@@ -30,6 +40,7 @@ export default function Home() {
   const [activeTable, setActiveTable] = useState("1");
   const [udhariBills, setUdhariBills] = useState<UdhariBill[]>([]);
   const [settledUdhariBills, setSettledUdhariBills] = useState<UdhariBill[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<SettledBill[]>([]);
 
   const addToBill = (item: MenuItem) => {
     setBills((prevBills) => {
@@ -112,6 +123,11 @@ export default function Home() {
     }
   }
 
+  const recordPayment = (settledBill: SettledBill) => {
+    setPaymentHistory(prev => [settledBill, ...prev]);
+    clearBill();
+  }
+
   const billedTables = Array.from(Object.keys(bills));
 
   return (
@@ -132,6 +148,7 @@ export default function Home() {
                   onAddToBill={addUdhariToBill} 
                   activeTable={activeTable} 
                />
+               <PaymentHistoryDialog paymentHistory={paymentHistory} />
               <div className="font-headline text-muted-foreground hidden sm:block">
                 डिजिटल हॉटेल सुविधार
               </div>
@@ -157,6 +174,7 @@ export default function Home() {
               onUpdateQuantity={updateQuantity}
               onClearBill={clearBill}
               onSaveToUdhari={saveToUdhari}
+              onRecordPayment={recordPayment}
               activeTable={activeTable}
             />
           </div>
