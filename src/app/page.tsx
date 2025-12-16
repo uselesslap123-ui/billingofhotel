@@ -241,6 +241,11 @@ export default function Home() {
     </div>;
   }
 
+  const MarqueeText = () => (
+    <span className="text-lg font-semibold text-primary px-4 whitespace-nowrap">
+      🍽️ हॉटेल सुग्ररण – 🥗🍗 Veg–Non-Veg जेवण, 🏡 घरगुती चव आणि 🤝 विश्वासाची ओळख ❤️&nbsp;
+    </span>
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -276,7 +281,10 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
              <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
-                <span className="animate-marquee text-lg font-semibold text-primary px-4 whitespace-nowrap">🍽️ हॉटेल सुग्ररण – 🥗🍗 Veg–Non-Veg जेवण, 🏡 घरगुती चव आणि 🤝 विश्वासाची ओळख ❤️ &nbsp; 🍽️ हॉटेल सुग्ररण – 🥗🍗 Veg–Non-Veg जेवण, 🏡 घरगुती चव आणि 🤝 विश्वासाची ओळख ❤️ &nbsp;</span>
+                <div className="animate-marquee">
+                  <MarqueeText />
+                  <MarqueeText />
+                </div>
              </div>
              <TableLayout
               tables={TOTAL_TABLES}
