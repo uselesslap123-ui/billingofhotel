@@ -29,10 +29,11 @@ import {
 
 interface UdhariDialogProps {
     udhariBills: UdhariBill[];
-    onSettleUdhari: (udhariId: string) => void;
+    onAddToBill: (udhariBill: UdhariBill) => void;
+    activeTable: string;
 }
 
-export function UdhariDialog({ udhariBills, onSettleUdhari }: UdhariDialogProps) {
+export function UdhariDialog({ udhariBills, onAddToBill, activeTable }: UdhariDialogProps) {
 
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
 
@@ -66,19 +67,19 @@ export function UdhariDialog({ udhariBills, onSettleUdhari }: UdhariDialogProps)
                                             <p className="font-bold text-lg">Rs.{bill.totalAmount.toFixed(2)}</p>
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" className="mt-1">Settle</Button>
+                                                    <Button variant="outline" size="sm" className="mt-1">Add to Bill</Button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            This will settle the udhari of Rs.{bill.totalAmount.toFixed(2)} for {bill.customerName}. This action cannot be undone.
+                                                            This will add the udhari of Rs.{bill.totalAmount.toFixed(2)} for {bill.customerName} to the current bill for Table {activeTable} and settle this udhari.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => onSettleUdhari(bill.id)}>
-                                                            Confirm & Settle
+                                                        <AlertDialogAction onClick={() => onAddToBill(bill)}>
+                                                            Confirm & Add to Bill
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
                                                 </AlertDialogContent>

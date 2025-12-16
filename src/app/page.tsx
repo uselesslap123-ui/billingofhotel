@@ -50,6 +50,26 @@ export default function Home() {
     });
   };
 
+  const addUdhariToBill = (udhariBill: UdhariBill) => {
+    setBills((prevBills) => {
+      const tableBill = prevBills[activeTable] || [];
+      const newTableBill = [...tableBill];
+
+      udhariBill.items.forEach(udhariItem => {
+        const existingItem = newTableBill.find(i => i.id === udhariItem.id);
+        if (existingItem) {
+          existingItem.quantity += udhariItem.quantity;
+        } else {
+          newTableBill.push(udhariItem);
+        }
+      });
+
+      return { ...prevBills, [activeTable]: newTableBill };
+    });
+    // Settle the udhari bill after adding it
+    settleUdhari(udhariBill.id);
+  };
+
   const updateQuantity = (itemId: number, quantity: number) => {
     setBills((prevBills) => {
       const tableBill = prevBills[activeTable] || [];
@@ -103,7 +123,7 @@ export default function Home() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
-               <UdhariDialog udhariBills={udhariBills} onSettleUdhari={settleUdhari} />
+               <UdhariDialog udhariBills={udhariBills} onAddToBill={addUdhariToBill} activeTable={activeTable} />
               <div className="font-headline text-muted-foreground hidden sm:block">
                 डिजिटल हॉटेल सुविधार
               </div>
