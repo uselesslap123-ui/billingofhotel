@@ -41,7 +41,7 @@ export default function Home() {
             <div className="flex items-center space-x-3">
               <UtensilsCrossed className="h-8 w-8 text-primary" />
               <h1 className="text-2xl font-bold font-headline text-foreground">
-                Hotel Suvidha Billing
+                हॉटेल सुग्ररण
               </h1>
             </div>
             <div className="font-headline text-muted-foreground">
