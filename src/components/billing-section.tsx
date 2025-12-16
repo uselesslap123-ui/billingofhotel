@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { QRCode } from "react-qrcode-logo";
+import { format } from "date-fns";
 
 interface BillingSectionProps {
   items: BillItem[];
@@ -173,7 +174,12 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
           pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
           heightLeft -= pdf.internal.pageSize.getHeight();
         }
-        pdf.save(`bill-${billNumber}.pdf`);
+        
+        const namePart = customerName.trim().replace(/\s+/g, '_') || 'bill';
+        const datePart = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
+        const fileName = `${namePart}_${datePart}.pdf`;
+
+        pdf.save(fileName);
       });
     }
   };
