@@ -6,7 +6,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -240,83 +240,84 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   <DialogHeader>
                     <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                   </DialogHeader>
-                  <div id="bill-to-print" ref={billContentRef} className="p-6 bg-white text-black rounded-sm">
-                    <div className="text-center mb-4">
-                      <h3 className="text-xl font-bold font-headline">हॉटेल सुग्ररण</h3>
-                      <p className="text-sm">Bill Receipt</p>
+                  <div id="bill-to-print" ref={billContentRef} className="p-6 bg-white text-black rounded-lg font-sans">
+                    <div className="text-center mb-6">
+                      <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
+                      <p className="text-sm text-gray-500">Official Bill Receipt</p>
                     </div>
-                    <Separator className="my-2 bg-gray-300" />
-                    <div className="flex justify-between text-xs mb-2">
-                      <p><strong>Bill No:</strong> {billNumber}</p>
-                      <p><strong>Date:</strong> {billDate}</p>
+                    <Separator className="my-4 border-dashed border-gray-400" />
+                    <div className="grid grid-cols-2 gap-x-4 text-xs mb-4">
+                      <div><strong>Bill No:</strong> <span className="font-mono">{billNumber}</span></div>
+                      <div className="text-right"><strong>Date:</strong> {billDate}</div>
+                      <div><strong>{isParcel ? 'Order:' : 'Table:'}</strong> {activeTable}</div>
+                      {customerName && <div className="text-right"><strong>Customer:</strong> {customerName}</div>}
                     </div>
-                    <div className="flex justify-between text-xs mb-2">
-                      <p><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</p>
-                      {customerName && <p><strong>Customer:</strong> {customerName}</p>}
-                    </div>
-                    <Separator className="my-2 bg-gray-300"/>
-                    <table className="w-full text-xs">
+                    <Separator className="my-4 border-dashed border-gray-400"/>
+                    <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-300">
-                          <th className="text-left py-1 font-semibold">Item</th>
-                          <th className="text-center py-1 font-semibold">Qty</th>
-                          <th className="text-right py-1 font-semibold">Price</th>
-                          <th className="text-right py-1 font-semibold">Amount</th>
+                        <tr className="border-b-2 border-gray-300">
+                          <th className="text-left py-2 font-semibold text-gray-600">Item</th>
+                          <th className="text-center py-2 font-semibold text-gray-600">Qty</th>
+                          <th className="text-right py-2 font-semibold text-gray-600">Price</th>
+                          <th className="text-right py-2 font-semibold text-gray-600">Amount</th>
                         </tr>
                       </thead>
                       <tbody>
                         {items.map(item => (
-                          <tr key={item.id}>
-                            <td className="py-1">{item.name}</td>
-                            <td className="text-center py-1">{item.quantity}</td>
-                            <td className="text-right py-1">Rs.{item.price.toFixed(2)}</td>
-                            <td className="text-right py-1">Rs.{(item.price * item.quantity).toFixed(2)}</td>
+                          <tr key={item.id} className="border-b border-gray-200">
+                            <td className="py-2">{item.name}</td>
+                            <td className="text-center py-2">{item.quantity}</td>
+                            <td className="text-right py-2 font-mono">Rs.{item.price.toFixed(2)}</td>
+                            <td className="text-right py-2 font-mono">Rs.{(item.price * item.quantity).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    <Separator className="my-2 bg-gray-300" />
-                    <div className="text-xs space-y-1 mt-2">
+                    <div className="mt-4 text-sm space-y-2">
                       <div className="flex justify-between">
-                        <span>Subtotal:</span>
-                        <span>Rs.{subtotal.toFixed(2)}</span>
+                        <span className="text-gray-600">Subtotal:</span>
+                        <span className="font-medium font-mono">Rs.{subtotal.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                        <span>Rs.{gstAmount.toFixed(2)}</span>
+                        <span className="text-gray-600">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                        <span className="font-medium font-mono">Rs.{gstAmount.toFixed(2)}</span>
                       </div>
-                      <Separator className="my-1 bg-gray-300" />
-                       <div className="flex justify-between font-bold">
+                      <Separator className="my-2 border-dashed border-gray-400" />
+                       <div className="flex justify-between font-bold text-lg text-gray-800">
                         <span>TOTAL:</span>
-                        <span>Rs.{totalAmount.toFixed(2)}</span>
+                        <span className="font-mono">Rs.{totalAmount.toFixed(2)}</span>
                       </div>
                     </div>
-                     <Separator className="my-2 bg-gray-300" />
-                     <div className="mt-4 flex flex-col items-center">
-                        <p className="text-sm font-semibold">Scan to Pay</p>
-                        <div className="mt-2 p-2 bg-white inline-block rounded-lg shadow-inner">
+                     <Separator className="my-4 border-dashed border-gray-400" />
+                     <div className="mt-6 flex flex-col items-center justify-center">
+                        <p className="text-sm font-semibold text-gray-700">Scan QR to Pay Online</p>
+                        <div className="mt-2 p-2 bg-white inline-block rounded-lg shadow-md border">
                           <QRCode 
                             value={upiUrl} 
-                            size={128} 
+                            size={140} 
                             quietZone={10}
                             qrStyle="dots"
-                            eyeRadius={[10, 10, 10, 10]}
+                            eyeRadius={[
+                              { outer: 10, inner: 0 },
+                              { outer: 10, inner: 0 },
+                              { outer: 10, inner: 0 },
+                            ]}
                             logoImage={logoDataUri}
-                            logoWidth={30}
-                            logoHeight={30}
+                            logoWidth={35}
+                            logoHeight={35}
                             logoPadding={5}
                             logoPaddingStyle="circle"
                             fgColor="#004d4d"
                           />
                         </div>
-                        <p className="text-xs mt-2">UPI ID: {UPI_ID}</p>
+                        <p className="text-xs mt-2 font-mono text-gray-600">UPI: {UPI_ID}</p>
                       </div>
-                     <p className="text-center text-[10px] mt-4">Thank you for your visit!</p>
+                     <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                   </div>
-                  <DialogFooter className="sm:justify-between">
+                  <DialogFooter className="sm:justify-between pt-4">
                      <div className="flex gap-2">
-                       <Button variant="secondary" onClick={handlePrint}>Print</Button>
-                       <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
+                       <Button variant="secondary" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
+                       <Button variant="secondary" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
                      </div>
                      <div className="flex gap-2">
                         <DialogClose asChild>
@@ -339,9 +340,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
-
-    
-
-    
 
     
