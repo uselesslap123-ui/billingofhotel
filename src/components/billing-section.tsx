@@ -142,8 +142,8 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const isParcel = activeTable === 'Parcel';
   const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalAmount.toFixed(2)}&cu=INR`;
   
-  const logoSvg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="20" fill="white"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="PT Sans, sans-serif" font-size="60" font-weight="bold" fill="#008080">S</text></svg>`;
-  const logoDataUri = `data:image/svg+xml;base64,${btoa(logoSvg)}`;
+  const logoSvg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="20" fill="white"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="60" font-weight="bold" fill="#008080">S</text></svg>`;
+  const logoDataUri = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString('base64')}`;
 
 
   return (
@@ -159,6 +159,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
             placeholder="Customer Name (for Udhari/Invoice)"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
+            className="text-base sm:text-sm"
           />
 
           <ScrollArea className="h-64 pr-4">
@@ -232,17 +233,17 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
           <div className="grid grid-cols-2 gap-2">
             <Dialog onOpenChange={(open) => !open && setBillNumber('')}>
               <DialogTrigger asChild>
-                <Button size="lg" className="w-full" onClick={handleGenerateBill} disabled={items.length === 0}>
+                <Button size="lg" className="w-full text-base sm:text-sm" onClick={handleGenerateBill} disabled={items.length === 0}>
                   <Printer className="mr-2 h-4 w-4" /> Generate Bill
                 </Button>
               </DialogTrigger>
               {billNumber && (
-                <DialogContent className="sm:max-w-md flex flex-col h-full max-h-[90vh]">
+                <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
                   <DialogHeader>
                     <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                   </DialogHeader>
                   <ScrollArea className="flex-grow pr-6 -mr-6">
-                    <div id="bill-to-print" ref={billContentRef} className="p-6 bg-white text-black rounded-lg font-sans">
+                    <div id="bill-to-print" ref={billContentRef} className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
                       <div className="text-center mb-6">
                         <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
                         <p className="text-sm text-gray-500">Official Bill Receipt</p>
@@ -335,7 +336,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                 </DialogContent>
               )}
             </Dialog>
-            <Button variant="secondary" onClick={handleSaveToUdhari} disabled={items.length === 0}>
+            <Button variant="secondary" onClick={handleSaveToUdhari} disabled={items.length === 0} className="text-base sm:text-sm">
               <BookUser className="mr-2 h-4 w-4" /> Save to Udhari
             </Button>
           </div>
@@ -344,3 +345,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
+
+    
