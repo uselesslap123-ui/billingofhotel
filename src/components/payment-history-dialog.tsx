@@ -1,24 +1,40 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef } from "react";
 import type { SettledBill, UdhariBill, BillItem } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart } from "lucide-react";
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download } from "lucide-react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogFooter,
+    DialogClose,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
 
 interface PaymentHistoryDialogProps {
     paymentHistory: SettledBill[];
@@ -98,6 +114,7 @@ type ItemSalesReport = {
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
     const cashPayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Cash'), [paymentHistory]);
     const onlinePayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Online'), [paymentHistory]);
+    const historyTableRef = useRef<HTMLDivElement>(null);
     
     const calculateTotals = (payments: SettledBill[], udharis: UdhariBill[]) => {
         return {
@@ -106,6 +123,47 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
             udhari: udharis.reduce((acc, bill) => acc + bill.totalAmount, 0)
         }
     }
+
+    const downloadCSV = () => {
+        const headers = ["ID", "Date", "Table", "Total Amount", "Payment Method", "Items"];
+        const rows = paymentHistory.map(bill => [
+            bill.id,
+            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
+            bill.table,
+            bill.totalAmount.toFixed(2),
+            bill.paymentMethod,
+            `"${bill.items.map(i => `${i.name} (x${i.quantity})`).join(", ")}"`
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", `Hisab_Kitab_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    const downloadPDF = () => {
+        const input = historyTableRef.current;
+        if (input) {
+            html2canvas(input, { scale: 2 }).then((canvas) => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                const pdfHeight = pdfWidth / ratio;
+                
+                pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfHeight - 20);
+                pdf.save(`Hisab_Kitab_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+            });
+        }
+    };
+
 
     const dailyData = useMemo(() => {
         const dailyPayments = paymentHistory.filter(p => isToday(new Date(p.date)));
@@ -157,7 +215,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                 <DialogHeader>
                     <DialogTitle className="font-headline text-2xl pr-8">Income &amp; History</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="flex-grow -mx-6 px-6">
+                 <ScrollArea className="flex-grow -mx-6 px-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                         <SummaryCard title="Today's Summary" data={dailyData} />
                         <SummaryCard title="This Week's Summary" data={weeklyData} />
@@ -273,6 +331,57 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsContent>
                     </Tabs>
                 </ScrollArea>
+                <DialogFooter className="mt-4">
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="destructive" className="bg-red-500/15 text-red-500 border border-red-500/30 hover:bg-red-500/25 hover:text-red-600">
+                             <Download className="mr-2 h-4 w-4"/> HISAB-KITAB
+                           </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Download Hisab-Kitab</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Choose the format to download your complete payment history.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={downloadCSV}>Download CSV (Excel)</AlertDialogAction>
+                                <AlertDialogAction onClick={downloadPDF}>Download PDF</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </DialogFooter>
+
+                {/* Hidden table for PDF generation */}
+                <div className="absolute -left-[9999px] top-0 opacity-0" ref={historyTableRef}>
+                     <div className="p-8 bg-white text-black">
+                        <h2 className="text-2xl font-bold text-center mb-4">Payment History (Hisab-Kitab)</h2>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Table</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead>Payment Method</TableHead>
+                                    <TableHead>Items</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paymentHistory.map((bill) => (
+                                    <TableRow key={bill.id}>
+                                        <TableCell>{format(new Date(bill.date), 'PPp')}</TableCell>
+                                        <TableCell>{bill.table}</TableCell>
+                                        <TableCell>Rs.{bill.totalAmount.toFixed(2)}</TableCell>
+                                        <TableCell>{bill.paymentMethod}</TableCell>
+                                        <TableCell>{bill.items.map(i => `${i.name} x${i.quantity}`).join(', ')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     );
