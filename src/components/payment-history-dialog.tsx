@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard } from "lucide-react";
+import { History, Landmark, CreditCard, X } from "lucide-react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogClose,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -127,7 +128,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
             </DialogTrigger>
             <DialogContent className="max-w-md md:max-w-2xl lg:max-w-4xl">
                 <DialogHeader>
-                    <DialogTitle className="font-headline text-2xl">Income & History</DialogTitle>
+                    <DialogTitle className="font-headline text-2xl">Income &amp; History</DialogTitle>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <SummaryCard title="Today's Summary" data={dailyData} />
@@ -181,3 +182,5 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </Dialog>
     );
 }
+
+    
