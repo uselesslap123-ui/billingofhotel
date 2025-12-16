@@ -7,7 +7,7 @@ import { menuItems } from "@/lib/menu-items";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import type { BillItem } from "@/app/page";
 import {
   Accordion,
@@ -23,7 +23,7 @@ interface MenuSectionProps {
 
 export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
-
+  
   const categorizedMenuItems = useMemo(() => {
     const categories = menuItems.reduce((acc, item) => {
       const category = item.category;
@@ -36,7 +36,6 @@ export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
       return acc;
     }, {} as Record<string, MenuItem[]>);
 
-    // Filter out categories that are empty after search
     return Object.keys(categories)
       .filter(key => categories[key].length > 0)
       .reduce((obj, key) => {
@@ -45,15 +44,41 @@ export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
       }, {} as Record<string, MenuItem[]>);
   }, [searchTerm]);
 
-  const defaultActiveCategories = useMemo(() => Object.keys(categorizedMenuItems), [categorizedMenuItems]);
+  const allCategoryKeys = useMemo(() => Object.keys(categorizedMenuItems), [categorizedMenuItems]);
+  const [activeCategories, setActiveCategories] = useState(allCategoryKeys);
+  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
+
+  const toggleMenuExpansion = () => {
+    if (isMenuExpanded) {
+      setActiveCategories([]);
+    } else {
+      setActiveCategories(allCategoryKeys);
+    }
+    setIsMenuExpanded(!isMenuExpanded);
+  };
+  
+  // Keep controlled state in sync if search term changes
+  React.useEffect(() => {
+     if (isMenuExpanded) {
+        setActiveCategories(allCategoryKeys);
+     }
+  }, [allCategoryKeys, isMenuExpanded]);
 
   return (
     <section aria-labelledby="menu-heading">
       <div className="bg-card p-4 rounded-lg shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h2 id="menu-heading" className="text-xl font-bold font-headline">
-            Menu
-          </h2>
+            <div className="flex items-center gap-4">
+              <h2 id="menu-heading" className="text-xl font-bold font-headline">
+                Menu
+              </h2>
+               {allCategoryKeys.length > 0 && (
+                <Button variant="outline" size="sm" onClick={toggleMenuExpansion} className="hidden sm:flex">
+                  {isMenuExpanded ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
+                  {isMenuExpanded ? "Show Less" : "Show More"}
+                </Button>
+              )}
+            </div>
           <Input
             placeholder="Search menu..."
             className="max-w-xs"
@@ -62,7 +87,7 @@ export function MenuSection({ onAddItem, billItems }: MenuSectionProps) {
           />
         </div>
 
-        <Accordion type="multiple" defaultValue={defaultActiveCategories} className="w-full">
+        <Accordion type="multiple" value={activeCategories} onValueChange={setActiveCategories} className="w-full">
           {Object.entries(categorizedMenuItems).map(([category, items]) => (
             <AccordionItem value={category} key={category}>
               <AccordionTrigger className="text-lg font-semibold">{category}</AccordionTrigger>
