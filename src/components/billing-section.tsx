@@ -21,6 +21,7 @@ import html2canvas from "html2canvas";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { QRCode } from "react-qrcode-logo";
 
 interface BillingSectionProps {
   items: BillItem[];
@@ -32,6 +33,8 @@ interface BillingSectionProps {
 }
 
 const GST_RATE = 0.05; // 5%
+const UPI_ID = "8530378745@axl";
+const PAYEE_NAME = "Hotel Sugaran";
 
 export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToUdhari, onRecordPayment, activeTable }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
@@ -132,6 +135,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   };
 
   const isParcel = activeTable === 'Parcel';
+  const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalAmount.toFixed(2)}&cu=INR`;
 
   return (
     <Card className="sticky top-20 shadow-lg">
@@ -280,6 +284,13 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       </div>
                     </div>
                      <Separator className="my-2 bg-gray-300" />
+                     <div className="mt-4 flex flex-col items-center">
+                        <p className="text-sm font-semibold">Scan to Pay</p>
+                        <div className="mt-2">
+                          <QRCode value={upiUrl} size={128} />
+                        </div>
+                        <p className="text-xs mt-2">UPI ID: {UPI_ID}</p>
+                      </div>
                      <p className="text-center text-[10px] mt-4">Thank you for your visit!</p>
                   </div>
                   <DialogFooter className="sm:justify-between">
