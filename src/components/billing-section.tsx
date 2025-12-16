@@ -172,7 +172,7 @@ export function BillingSection({ items, onUpdateQuantity }: BillingSectionProps)
                 </DialogHeader>
                 <div ref={billContentRef} className="p-6 bg-white text-black rounded-sm">
                   <div className="text-center mb-4">
-                    <h3 className="text-xl font-bold font-headline">Hotel Suvidha</h3>
+                    <h3 className="text-xl font-bold font-headline">हॉटेल सुग्ररण</h3>
                     <p className="text-sm">Bill Receipt</p>
                   </div>
                   <Separator className="my-2 bg-gray-300" />
