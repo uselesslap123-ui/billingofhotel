@@ -46,13 +46,15 @@ const SettledBillCard = ({ bill }: { bill: SettledBill }) => {
         <Separator className="my-2" />
         <details>
             <summary className="text-sm font-medium cursor-pointer">View Items ({bill.items.length})</summary>
-            <ul className="mt-2 ml-4 text-sm text-muted-foreground list-disc space-y-1">
-                {bill.items.map(item => (
-                    <li key={item.id}>
-                        {item.name} x {item.quantity} - Rs.{(item.price * item.quantity).toFixed(2)}
-                    </li>
-                ))}
-            </ul>
+            <ScrollArea className="max-h-32 mt-2">
+              <ul className="pr-4 ml-4 text-sm text-muted-foreground list-disc space-y-1">
+                  {bill.items.map(item => (
+                      <li key={item.id}>
+                          {item.name} x {item.quantity} - Rs.{(item.price * item.quantity).toFixed(2)}
+                      </li>
+                  ))}
+              </ul>
+            </ScrollArea>
         </details>
     </div>
 )};
