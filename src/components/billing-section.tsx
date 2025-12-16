@@ -136,6 +136,10 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
 
   const isParcel = activeTable === 'Parcel';
   const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalAmount.toFixed(2)}&cu=INR`;
+  
+  const logoSvg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="20" fill="white"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="PT Sans, sans-serif" font-size="60" font-weight="bold" fill="#008080">S</text></svg>`;
+  const logoDataUri = `data:image/svg+xml;base64,${btoa(logoSvg)}`;
+
 
   return (
     <Card className="sticky top-20 shadow-lg">
@@ -286,8 +290,18 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                      <Separator className="my-2 bg-gray-300" />
                      <div className="mt-4 flex flex-col items-center">
                         <p className="text-sm font-semibold">Scan to Pay</p>
-                        <div className="mt-2">
-                          <QRCode value={upiUrl} size={128} />
+                        <div className="mt-2 p-2 bg-white inline-block rounded-lg shadow-inner">
+                          <QRCode 
+                            value={upiUrl} 
+                            size={128} 
+                            quietZone={10}
+                            qrStyle="dots"
+                            eyeRadius={5}
+                            logoImage={logoDataUri}
+                            logoWidth={35}
+                            logoHeight={35}
+                            fgColor="#004d4d"
+                          />
                         </div>
                         <p className="text-xs mt-2">UPI ID: {UPI_ID}</p>
                       </div>
@@ -316,3 +330,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
+
+    
