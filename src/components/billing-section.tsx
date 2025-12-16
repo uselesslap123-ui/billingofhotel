@@ -6,7 +6,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, QrCode } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
   const billContentRef = useRef<HTMLDivElement>(null);
+  const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const subtotal = useMemo(() => {
@@ -49,18 +50,21 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
 
   const gstAmount = useMemo(() => subtotal * GST_RATE, [subtotal]);
   const totalAmount = useMemo(() => subtotal + gstAmount, [subtotal, gstAmount]);
+  
+  const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalAmount.toFixed(2)}&cu=INR`;
 
-  const handleGenerateBill = () => {
+  const handleSettleBill = () => {
     if (items.length === 0) {
       toast({
         title: "Empty Bill",
-        description: `Please add items to the ${activeTable === 'Parcel' ? 'parcel' : `bill for Table ${activeTable}`} before generating.`,
+        description: `Please add items to the ${activeTable === 'Parcel' ? 'parcel' : `bill for Table ${activeTable}`} before settling.`,
         variant: "destructive",
       });
       return false;
     }
     setBillNumber(`HSB-${Date.now()}`);
     setBillDate(new Date().toLocaleString());
+    setIsSettleDialogOpen(true);
     return true;
   };
 
@@ -78,6 +82,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       title: "Payment Recorded",
       description: `Bill for ${activeTable === 'Parcel' ? 'Parcel' : `Table ${activeTable}`} of Rs.${totalAmount.toFixed(2)} paid by ${method}.`,
     });
+    setIsSettleDialogOpen(false);
   };
 
   const handleDownloadPdf = () => {
@@ -226,16 +231,16 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
             </>
           )}
           <div className="grid grid-cols-2 gap-2">
-            <Dialog onOpenChange={(open) => !open && setBillNumber('')}>
+            <Dialog open={isSettleDialogOpen} onOpenChange={(open) => { if(!open) { setIsSettleDialogOpen(false); setBillNumber(''); } }}>
               <DialogTrigger asChild>
-                <Button size="lg" className="w-full text-base sm:text-sm" onClick={handleGenerateBill} disabled={items.length === 0}>
-                  <Printer className="mr-2 h-4 w-4" /> Generate Bill
+                <Button size="lg" className="w-full text-base sm:text-sm" onClick={handleSettleBill} disabled={items.length === 0}>
+                  <Printer className="mr-2 h-4 w-4" /> Settle Bill
                 </Button>
               </DialogTrigger>
               {billNumber && (
                 <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
                   <DialogHeader>
-                    <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
+                    <DialogTitle className="font-headline">Bill & Payment Options</DialogTitle>
                   </DialogHeader>
                   <ScrollArea className="flex-grow pr-6 -mr-6">
                     <div id="bill-to-print" ref={billContentRef} className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
@@ -287,18 +292,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                         </div>
                       </div>
                       <Separator className="my-4 border-dashed border-gray-400" />
-                      <div className="mt-6 flex flex-col items-center justify-center">
-                          <p className="text-sm font-semibold text-gray-700">Scan QR to Pay Online</p>
-                          <div className="mt-2 p-2 bg-white inline-block rounded-lg shadow-md border">
-                            <QRCode 
-                              value={`upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalAmount.toFixed(2)}&cu=INR`}
-                              size={120}
-                              quietZone={10}
-                              fgColor="#000000"
-                            />
-                          </div>
-                          <p className="text-xs mt-2 font-mono text-gray-600">UPI: {UPI_ID}</p>
-                        </div>
                       <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                     </div>
                   </ScrollArea>
@@ -308,11 +301,30 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                        <Button variant="secondary" size="sm" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
                      </div>
                      <div className="flex gap-2">
+                        <Dialog>
+                           <DialogTrigger asChild>
+                              <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
+                           </DialogTrigger>
+                           <DialogContent className="sm:max-w-xs">
+                              <DialogHeader>
+                                 <DialogTitle className="font-headline">Scan to Pay</DialogTitle>
+                              </DialogHeader>
+                              <div className="flex flex-col items-center justify-center p-4">
+                                 <div className="p-2 bg-white rounded-lg shadow-md border">
+                                    <QRCode value={upiUrl} size={200} quietZone={10} />
+                                 </div>
+                                 <p className="mt-4 font-bold text-xl">Total: Rs.{totalAmount.toFixed(2)}</p>
+                                 <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
+                              </div>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button className="w-full" onClick={() => handlePayment('Online')}>Confirm Payment</Button>
+                                </DialogClose>
+                              </DialogFooter>
+                           </DialogContent>
+                        </Dialog>
                         <DialogClose asChild>
-                           <Button size="sm" onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
-                        </DialogClose>
-                        <DialogClose asChild>
-                           <Button size="sm" onClick={() => handlePayment('Online')}><CreditCard className="mr-2 h-4 w-4" /> Paid Online</Button>
+                           <Button size="sm" variant="outline" onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
                         </DialogClose>
                      </div>
                   </DialogFooter>
