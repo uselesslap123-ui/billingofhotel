@@ -2,11 +2,11 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import type { BillItem } from "@/app/page";
+import type { BillItem, UdhariBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, Check, ChevronsUpDown } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, Check, ChevronsUpDown, BookUser } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,11 +28,12 @@ interface BillingSectionProps {
   onClearBill: () => void;
   activeTable: string;
   onSetActiveTable: (table: string) => void;
+  onAddToUdhari: (udhariBill: UdhariBill) => void;
 }
 
 const GST_RATE = 0.05; // 5%
 
-export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTable }: BillingSectionProps) {
+export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTable, onAddToUdhari }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -86,6 +87,40 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
     }
   };
 
+  const handleAddToUdhari = () => {
+    if (items.length === 0) {
+        toast({
+            title: "Empty Bill",
+            description: "Cannot add an empty bill to Udhari.",
+            variant: "destructive",
+        });
+        return;
+    }
+    if (!customerName.trim()) {
+        toast({
+            title: "Customer Name Required",
+            description: "Please enter a customer name for Udhari.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    const udhariBill: UdhariBill = {
+        id: `UDHARI-${Date.now()}`,
+        customerName: customerName.trim(),
+        items: items,
+        totalAmount: totalAmount,
+        date: new Date().toISOString(),
+    };
+
+    onAddToUdhari(udhariBill);
+    setCustomerName("");
+    toast({
+        title: "Udhari Saved",
+        description: `Bill for ${udhariBill.customerName} has been saved to Udhari.`,
+    });
+};
+
   const isParcel = activeTable === 'Parcel';
 
   return (
@@ -98,7 +133,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
       <CardContent>
         <div className="space-y-4">
           <Input
-            placeholder="Customer Name (Optional)"
+            placeholder="Customer Name (Required for Udhari)"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
           />
@@ -171,83 +206,87 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
               </div>
             </>
           )}
-
-          <Dialog onOpenChange={(open) => !open && handleDialogClose()}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="w-full" onClick={handleGenerateBill} disabled={items.length === 0}>
-                <Printer className="mr-2 h-4 w-4" /> Generate Bill
-              </Button>
-            </DialogTrigger>
-            {billNumber && (
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="font-headline">Bill Details</DialogTitle>
-                </DialogHeader>
-                <div ref={billContentRef} className="p-6 bg-white text-black rounded-sm">
-                  <div className="text-center mb-4">
-                    <h3 className="text-xl font-bold font-headline">हॉटेल सुग्ररण</h3>
-                    <p className="text-sm">Bill Receipt</p>
-                  </div>
-                  <Separator className="my-2 bg-gray-300" />
-                  <div className="flex justify-between text-xs mb-2">
-                    <p><strong>Bill No:</strong> {billNumber}</p>
-                    <p><strong>Date:</strong> {billDate}</p>
-                  </div>
-                  <div className="flex justify-between text-xs mb-2">
-                    <p><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</p>
-                    {customerName && <p><strong>Customer:</strong> {customerName}</p>}
-                  </div>
-                  <Separator className="my-2 bg-gray-300"/>
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-gray-300">
-                        <th className="text-left py-1 font-semibold">Item</th>
-                        <th className="text-center py-1 font-semibold">Qty</th>
-                        <th className="text-right py-1 font-semibold">Price</th>
-                        <th className="text-right py-1 font-semibold">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map(item => (
-                        <tr key={item.id}>
-                          <td className="py-1">{item.name}</td>
-                          <td className="text-center py-1">{item.quantity}</td>
-                          <td className="text-right py-1">Rs.{item.price.toFixed(2)}</td>
-                          <td className="text-right py-1">Rs.{(item.price * item.quantity).toFixed(2)}</td>
+          <div className="flex gap-2">
+            <Dialog onOpenChange={(open) => !open && handleDialogClose()}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="w-full" onClick={handleGenerateBill} disabled={items.length === 0}>
+                  <Printer className="mr-2 h-4 w-4" /> Generate Bill
+                </Button>
+              </DialogTrigger>
+              {billNumber && (
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="font-headline">Bill Details</DialogTitle>
+                  </DialogHeader>
+                  <div ref={billContentRef} className="p-6 bg-white text-black rounded-sm">
+                    <div className="text-center mb-4">
+                      <h3 className="text-xl font-bold font-headline">हॉटेल सुग्ररण</h3>
+                      <p className="text-sm">Bill Receipt</p>
+                    </div>
+                    <Separator className="my-2 bg-gray-300" />
+                    <div className="flex justify-between text-xs mb-2">
+                      <p><strong>Bill No:</strong> {billNumber}</p>
+                      <p><strong>Date:</strong> {billDate}</p>
+                    </div>
+                    <div className="flex justify-between text-xs mb-2">
+                      <p><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</p>
+                      {customerName && <p><strong>Customer:</strong> {customerName}</p>}
+                    </div>
+                    <Separator className="my-2 bg-gray-300"/>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-gray-300">
+                          <th className="text-left py-1 font-semibold">Item</th>
+                          <th className="text-center py-1 font-semibold">Qty</th>
+                          <th className="text-right py-1 font-semibold">Price</th>
+                          <th className="text-right py-1 font-semibold">Amount</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <Separator className="my-2 bg-gray-300" />
-                  <div className="text-xs space-y-1 mt-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span>Rs.{subtotal.toFixed(2)}</span>
+                      </thead>
+                      <tbody>
+                        {items.map(item => (
+                          <tr key={item.id}>
+                            <td className="py-1">{item.name}</td>
+                            <td className="text-center py-1">{item.quantity}</td>
+                            <td className="text-right py-1">Rs.{item.price.toFixed(2)}</td>
+                            <td className="text-right py-1">Rs.{(item.price * item.quantity).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <Separator className="my-2 bg-gray-300" />
+                    <div className="text-xs space-y-1 mt-2">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>Rs.{subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                        <span>Rs.{gstAmount.toFixed(2)}</span>
+                      </div>
+                      <Separator className="my-1 bg-gray-300" />
+                       <div className="flex justify-between font-bold">
+                        <span>TOTAL:</span>
+                        <span>Rs.{totalAmount.toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                      <span>Rs.{gstAmount.toFixed(2)}</span>
-                    </div>
-                    <Separator className="my-1 bg-gray-300" />
-                     <div className="flex justify-between font-bold">
-                      <span>TOTAL:</span>
-                      <span>Rs.{totalAmount.toFixed(2)}</span>
-                    </div>
+                     <Separator className="my-2 bg-gray-300" />
+                     <p className="text-center text-[10px] mt-4">Thank you for your visit!</p>
                   </div>
-                   <Separator className="my-2 bg-gray-300" />
-                   <p className="text-center text-[10px] mt-4">Thank you for your visit!</p>
-                </div>
-                <DialogFooter>
-                  <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
-                  <DialogClose asChild>
-                    <Button type="button">
-                      Close & Clear Bill
-                    </Button>
-                  </DialogClose>
-                </DialogFooter>
-              </DialogContent>
-            )}
-          </Dialog>
+                  <DialogFooter>
+                    <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
+                    <DialogClose asChild>
+                      <Button type="button">
+                        Close & Clear Bill
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              )}
+            </Dialog>
+             <Button size="lg" variant="secondary" onClick={handleAddToUdhari} disabled={items.length === 0} className="w-full">
+                <BookUser className="mr-2 h-4 w-4" /> Save to Udhari
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
