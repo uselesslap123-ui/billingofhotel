@@ -101,6 +101,10 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleSaveToUdhari = () => {
     if (items.length === 0) {
       toast({
@@ -236,7 +240,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   <DialogHeader>
                     <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                   </DialogHeader>
-                  <div ref={billContentRef} className="p-6 bg-white text-black rounded-sm">
+                  <div id="bill-to-print" ref={billContentRef} className="p-6 bg-white text-black rounded-sm">
                     <div className="text-center mb-4">
                       <h3 className="text-xl font-bold font-headline">हॉटेल सुग्ररण</h3>
                       <p className="text-sm">Bill Receipt</p>
@@ -296,7 +300,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             size={128} 
                             quietZone={10}
                             qrStyle="dots"
-                            eyeRadius={10}
+                            eyeRadius={[10, 10, 10, 10]}
                             logoImage={logoDataUri}
                             logoWidth={30}
                             logoHeight={30}
@@ -310,7 +314,10 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                      <p className="text-center text-[10px] mt-4">Thank you for your visit!</p>
                   </div>
                   <DialogFooter className="sm:justify-between">
-                     <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
+                     <div className="flex gap-2">
+                       <Button variant="secondary" onClick={handlePrint}>Print</Button>
+                       <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
+                     </div>
                      <div className="flex gap-2">
                         <DialogClose asChild>
                            <Button onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
