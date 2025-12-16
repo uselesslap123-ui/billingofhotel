@@ -160,14 +160,8 @@ export default function Home() {
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
-             <div className="relative flex overflow-x-hidden bg-primary/10 py-2 rounded-lg -mb-4">
+             <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
                 <div className="animate-marquee whitespace-nowrap">
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुgrण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                  <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                </div>
-                 <div className="absolute top-0 animate-marquee whitespace-nowrap">
                   <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
                   <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
                   <span className="text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
