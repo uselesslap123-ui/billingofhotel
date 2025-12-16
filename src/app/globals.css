@@ -74,16 +74,11 @@
 }
 
 @layer utilities {
-  .marquee-container {
-    overflow: hidden;
-    position: relative;
-    width: 100%;
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
   }
-
-  .marquee {
-    display: inline-block;
-    white-space: nowrap;
+  .animate-marquee {
     animation: marquee 15s linear infinite;
-    padding-left: 100%;
   }
 }
