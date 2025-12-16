@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { MenuItem } from "@/lib/menu-items";
 import { MenuSection } from "@/components/menu-section";
 import { BillingSection } from "@/components/billing-section";
-import { UdhariSection } from "@/components/udhari-section";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
 
@@ -15,20 +14,11 @@ export type Bills = {
   [table: string]: BillItem[];
 };
 
-export type UdhariBill = {
-  id: string;
-  customerName: string;
-  items: BillItem[];
-  totalAmount: number;
-  date: string;
-};
-
 const TOTAL_TABLES = [...Array.from({ length: 8 }, (_, i) => (i + 1).toString()), 'Parcel'];
 
 export default function Home() {
   const [bills, setBills] = useState<Bills>({});
   const [activeTable, setActiveTable] = useState("1");
-  const [udhariBills, setUdhariBills] = useState<UdhariBill[]>([]);
 
   const addToBill = (item: MenuItem) => {
     setBills((prevBills) => {
@@ -60,7 +50,7 @@ export default function Home() {
           i.id === itemId ? { ...i, quantity } : i
         );
       }
-
+      
       const newBills = { ...prevBills, [activeTable]: newTableBill };
       if(newTableBill.length === 0) {
         delete newBills[activeTable];
@@ -76,15 +66,6 @@ export default function Home() {
         delete newBills[activeTable];
         return newBills;
      });
-  }
-
-  const addToUdhari = (udhariBill: UdhariBill) => {
-    setUdhariBills(prev => [...prev, udhariBill]);
-    clearBill();
-  };
-
-  const settleUdhari = (udhariId: string) => {
-    setUdhariBills(prev => prev.filter(bill => bill.id !== udhariId));
   }
 
   const billedTables = Object.keys(bills);
@@ -117,7 +98,6 @@ export default function Home() {
               onSelectTable={setActiveTable}
             />
             <MenuSection onAddItem={addToBill} />
-            <UdhariSection udhariBills={udhariBills} onSettleUdhari={settleUdhari} />
           </div>
           <div className="lg:col-span-2">
             <BillingSection
@@ -125,8 +105,6 @@ export default function Home() {
               onUpdateQuantity={updateQuantity}
               onClearBill={clearBill}
               activeTable={activeTable}
-              onSetActiveTable={setActiveTable}
-              onAddToUdhari={addToUdhari}
             />
           </div>
         </div>

@@ -2,11 +2,11 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import type { BillItem, UdhariBill } from "@/app/page";
+import type { BillItem } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, Check, ChevronsUpDown, BookUser } from "lucide-react";
+import { Minus, Plus, Trash2, Printer } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,13 +27,11 @@ interface BillingSectionProps {
   onUpdateQuantity: (itemId: number, quantity: number) => void;
   onClearBill: () => void;
   activeTable: string;
-  onSetActiveTable: (table: string) => void;
-  onAddToUdhari: (udhariBill: UdhariBill) => void;
 }
 
 const GST_RATE = 0.05; // 5%
 
-export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTable, onAddToUdhari }: BillingSectionProps) {
+export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTable }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
@@ -87,40 +85,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
     }
   };
 
-  const handleAddToUdhari = () => {
-    if (items.length === 0) {
-        toast({
-            title: "Empty Bill",
-            description: "Cannot add an empty bill to Udhari.",
-            variant: "destructive",
-        });
-        return;
-    }
-    if (!customerName.trim()) {
-        toast({
-            title: "Customer Name Required",
-            description: "Please enter a customer name for Udhari.",
-            variant: "destructive",
-        });
-        return;
-    }
-
-    const udhariBill: UdhariBill = {
-        id: `UDHARI-${Date.now()}`,
-        customerName: customerName.trim(),
-        items: items,
-        totalAmount: totalAmount,
-        date: new Date().toISOString(),
-    };
-
-    onAddToUdhari(udhariBill);
-    setCustomerName("");
-    toast({
-        title: "Udhari Saved",
-        description: `Bill for ${udhariBill.customerName} has been saved to Udhari.`,
-    });
-};
-
   const isParcel = activeTable === 'Parcel';
 
   return (
@@ -133,7 +97,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
       <CardContent>
         <div className="space-y-4">
           <Input
-            placeholder="Customer Name (Required for Udhari)"
+            placeholder="Customer Name (Optional)"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
           />
@@ -283,9 +247,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, activeTab
                 </DialogContent>
               )}
             </Dialog>
-             <Button size="lg" variant="secondary" onClick={handleAddToUdhari} disabled={items.length === 0} className="w-full">
-                <BookUser className="mr-2 h-4 w-4" /> Save to Udhari
-            </Button>
           </div>
         </div>
       </CardContent>
