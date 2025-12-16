@@ -314,17 +314,17 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       </div>
                      <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                   </div>
-                  <DialogFooter className="sm:justify-between pt-4">
-                     <div className="flex gap-2">
-                       <Button variant="secondary" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
-                       <Button variant="secondary" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
+                  <DialogFooter className="pt-4 flex-wrap items-center justify-between">
+                     <div className="flex gap-2 mb-2 sm:mb-0">
+                       <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
+                       <Button variant="secondary" size="sm" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
                      </div>
                      <div className="flex gap-2">
                         <DialogClose asChild>
-                           <Button onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
+                           <Button size="sm" onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
                         </DialogClose>
                         <DialogClose asChild>
-                           <Button onClick={() => handlePayment('Online')}><CreditCard className="mr-2 h-4 w-4" /> Paid Online</Button>
+                           <Button size="sm" onClick={() => handlePayment('Online')}><CreditCard className="mr-2 h-4 w-4" /> Paid Online</Button>
                         </DialogClose>
                      </div>
                   </DialogFooter>
@@ -340,5 +340,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </Card>
   );
 }
+
+    
 
     
