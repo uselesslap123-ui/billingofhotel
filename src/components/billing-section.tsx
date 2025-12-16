@@ -307,7 +307,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                     </div>
                   </div>
-                  <DialogFooter className="pt-4 sm:justify-between flex-col sm:flex-row gap-2">
+                  <DialogFooter className="pt-4 sm:justify-between flex-wrap items-center justify-between gap-2">
                      <div className="flex gap-2 justify-start">
                        <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
                        <Button variant="secondary" size="sm" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
