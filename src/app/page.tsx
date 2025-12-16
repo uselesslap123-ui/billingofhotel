@@ -36,6 +36,13 @@ export type SettledBill = {
   table: string;
 };
 
+export type Note = {
+  id: string;
+  content: string;
+  date: string;
+};
+
+
 const TOTAL_TABLES = [...Array.from({ length: 8 }, (_, i) => (i + 1).toString()), 'Parcel'];
 
 export default function Home() {
@@ -44,7 +51,7 @@ export default function Home() {
   const [udhariBills, setUdhariBills] = useState<UdhariBill[]>([]);
   const [settledUdhariBills, setSettledUdhariBills] = useState<UdhariBill[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<SettledBill[]>([]);
-  const [notepad, setNotepad] = useState("");
+  const [notes, setNotes] = useState<Note[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -53,13 +60,13 @@ export default function Home() {
       const savedUdhariBills = localStorage.getItem('udhariBills');
       const savedSettledUdhariBills = localStorage.getItem('settledUdhariBills');
       const savedPaymentHistory = localStorage.getItem('paymentHistory');
-      const savedNotepad = localStorage.getItem('notepad');
+      const savedNotes = localStorage.getItem('notes');
 
       if (savedBills) setBills(JSON.parse(savedBills));
       if (savedUdhariBills) setUdhariBills(prev => [...prev, ...JSON.parse(savedUdhariBills)]);
       if (savedSettledUdhariBills) setSettledUdhariBills(prev => [...prev, ...JSON.parse(savedSettledUdhariBills)]);
       if (savedPaymentHistory) setPaymentHistory(prev => [...prev, ...JSON.parse(savedPaymentHistory)]);
-      if (savedNotepad) setNotepad(savedNotepad);
+      if (savedNotes) setNotes(JSON.parse(savedNotes));
 
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
@@ -110,12 +117,12 @@ export default function Home() {
   useEffect(() => {
     if (isLoaded) {
       try {
-        localStorage.setItem('notepad', notepad);
+        localStorage.setItem('notes', JSON.stringify(notes));
       } catch (error) {
-        console.error("Failed to save notepad to localStorage", error);
+        console.error("Failed to save notes to localStorage", error);
       }
     }
-  }, [notepad, isLoaded]);
+  }, [notes, isLoaded]);
 
 
   const addToBill = (item: MenuItem) => {
@@ -203,6 +210,23 @@ export default function Home() {
     setUdhariBills(prev => prev.map(bill => bill.id === udhariId ? { ...bill, notes } : bill));
   };
 
+  const addNewNote = () => {
+    const newNote: Note = {
+      id: `NOTE-${Date.now()}`,
+      content: "",
+      date: new Date().toISOString(),
+    };
+    setNotes(prev => [newNote, ...prev]);
+  };
+
+  const updateNote = (noteId: string, content: string) => {
+    setNotes(prev => prev.map(note => note.id === noteId ? { ...note, content } : note));
+  };
+
+  const deleteNote = (noteId: string) => {
+    setNotes(prev => prev.filter(note => note.id !== noteId));
+  };
+
 
   const recordPayment = (settledBill: SettledBill) => {
     setPaymentHistory(prev => [settledBill, ...prev]);
@@ -236,8 +260,10 @@ export default function Home() {
                   settledUdhariBills={settledUdhariBills}
                   onAddToBill={addUdhariToBill} 
                   activeTable={activeTable} 
-                  notepad={notepad}
-                  onNotepadChange={setNotepad}
+                  notes={notes}
+                  onAddNewNote={addNewNote}
+                  onUpdateNote={updateNote}
+                  onDeleteNote={deleteNote}
                   onUpdateUdhariNotes={updateUdhariNotes}
                />
                <PaymentHistoryDialog paymentHistory={paymentHistory} udhariBills={udhariBills} />
@@ -281,3 +307,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

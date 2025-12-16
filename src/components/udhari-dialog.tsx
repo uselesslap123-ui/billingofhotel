@@ -2,13 +2,13 @@
 "use client";
 
 import { useState } from "react";
-import type { UdhariBill } from "@/app/page";
+import type { UdhariBill, Note } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
-import { NotebookText, NotebookPen, MessageSquareText, FilePenLine } from "lucide-react";
+import { NotebookText, NotebookPen, MessageSquareText, FilePenLine, Plus, Trash2, Edit } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -30,6 +30,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "./ui/card";
 
 
 interface UdhariDialogProps {
@@ -37,8 +38,10 @@ interface UdhariDialogProps {
     settledUdhariBills: UdhariBill[];
     onAddToBill: (udhariBill: UdhariBill) => void;
     activeTable: string;
-    notepad: string;
-    onNotepadChange: (value: string) => void;
+    notes: Note[];
+    onAddNewNote: () => void;
+    onUpdateNote: (noteId: string, content: string) => void;
+    onDeleteNote: (noteId: string) => void;
     onUpdateUdhariNotes: (udhariId: string, notes: string) => void;
 }
 
@@ -122,8 +125,67 @@ const UdhariBillCard = ({ bill, onAddToBill, activeTable, onUpdateUdhariNotes }:
     </div>
 );
 
+const NoteEditor = ({ note, onUpdate, onDelete }: { note: Note, onUpdate: (content: string) => void, onDelete: () => void }) => {
+    const [isEditing, setIsEditing] = useState(note.content === "");
+    const [content, setContent] = useState(note.content);
 
-export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable, notepad, onNotepadChange, onUpdateUdhariNotes }: UdhariDialogProps) {
+    const handleSave = () => {
+        onUpdate(content);
+        setIsEditing(false);
+    }
+    
+    return (
+        <Card>
+            <CardContent className="p-3">
+                 <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs text-muted-foreground">{format(new Date(note.date), "PPpp")}</p>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditing(true)} disabled={isEditing}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/80 hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Note?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete this note.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </div>
+                {isEditing ? (
+                    <div className="space-y-2">
+                        <Textarea 
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            rows={4}
+                            placeholder="Type your note here..."
+                        />
+                        <Button size="sm" onClick={handleSave}>Save Note</Button>
+                    </div>
+                ) : (
+                    <p className="text-sm whitespace-pre-wrap" onClick={() => setIsEditing(true)}>
+                        {content || <span className="text-muted-foreground">Empty note...</span>}
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
+
+
+export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable, notes, onAddNewNote, onUpdateNote, onDeleteNote, onUpdateUdhariNotes }: UdhariDialogProps) {
 
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
 
@@ -179,12 +241,25 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
                     </TabsContent>
                      <TabsContent value="notepad">
                         <div className="h-[60vh] flex flex-col p-1">
-                             <Textarea 
-                                placeholder="Jot down notes, reminders, or anything else..."
-                                className="flex-grow w-full rounded-md border border-input bg-transparent px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={notepad}
-                                onChange={(e) => onNotepadChange(e.target.value)}
-                            />
+                            <div className="mb-4">
+                                <Button onClick={onAddNewNote}><Plus className="mr-2 h-4 w-4" />New Note</Button>
+                            </div>
+                            <ScrollArea className="flex-grow pr-4 -mr-4">
+                               {notes.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-10">No notes yet. Click "New Note" to start.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {notes.map(note => (
+                                            <NoteEditor 
+                                                key={note.id} 
+                                                note={note} 
+                                                onUpdate={(content) => onUpdateNote(note.id, content)} 
+                                                onDelete={() => onDeleteNote(note.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </ScrollArea>
                         </div>
                     </TabsContent>
                 </Tabs>
@@ -192,3 +267,5 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
         </Dialog>
     );
 }
+
+    
