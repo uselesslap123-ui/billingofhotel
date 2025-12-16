@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,64 @@ interface BillingSectionProps {
 const GST_RATE = 0.05; // 5%
 const UPI_ID = "8530378745@axl";
 const PAYEE_NAME = "Hotel Sugaran";
+
+const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: string, totalAmount: number, onConfirmPayment: () => void }) => {
+    const [isQrOpen, setIsQrOpen] = useState(false);
+    const [countdown, setCountdown] = useState(90);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (isQrOpen) {
+            setCountdown(90); 
+            timer = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        setIsQrOpen(false);
+                        toast({
+                            title: "QR Code Expired",
+                            description: "Please generate a new QR code to pay.",
+                            variant: "destructive",
+                        });
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [isQrOpen, toast]);
+
+    return (
+        <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+            <DialogTrigger asChild>
+                <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xs">
+                <DialogHeader>
+                    <DialogTitle className="font-headline">Scan to Pay</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center p-4">
+                    <div className="p-2 bg-white rounded-lg shadow-md border">
+                        <QRCode value={upiUrl} size={200} quietZone={10} />
+                    </div>
+                    <p className="mt-4 font-bold text-xl">Total: Rs.{totalAmount.toFixed(2)}</p>
+                    <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
+                    <p className="text-sm font-bold text-destructive mt-4">
+                        QR code expires in {Math.floor(countdown / 60)}:{('0' + (countdown % 60)).slice(-2)}
+                    </p>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button className="w-full" onClick={onConfirmPayment}>Confirm Payment</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToUdhari, onRecordPayment, activeTable }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
@@ -320,28 +378,11 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                      <div className="flex gap-2 justify-center flex-wrap">
                        <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
                        <Button variant="secondary" size="sm" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
-                        <Dialog>
-                           <DialogTrigger asChild>
-                              <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
-                           </DialogTrigger>
-                           <DialogContent className="sm:max-w-xs">
-                              <DialogHeader>
-                                 <DialogTitle className="font-headline">Scan to Pay</DialogTitle>
-                              </DialogHeader>
-                              <div className="flex flex-col items-center justify-center p-4">
-                                 <div className="p-2 bg-white rounded-lg shadow-md border">
-                                    <QRCode value={upiUrl} size={200} quietZone={10} />
-                                 </div>
-                                 <p className="mt-4 font-bold text-xl">Total: Rs.{totalAmount.toFixed(2)}</p>
-                                 <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
-                              </div>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button className="w-full" onClick={() => handlePayment('Online')}>Confirm Payment</Button>
-                                </DialogClose>
-                              </DialogFooter>
-                           </DialogContent>
-                        </Dialog>
+                        <QRCodeDialog 
+                          upiUrl={upiUrl}
+                          totalAmount={totalAmount}
+                          onConfirmPayment={() => handlePayment('Online')}
+                        />
                         <DialogClose asChild>
                            <Button size="sm" variant="secondary" onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
                         </DialogClose>
