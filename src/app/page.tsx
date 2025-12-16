@@ -160,8 +160,11 @@ export default function Home() {
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
-             <div className="flex justify-center -mb-4">
+             <div className="flex justify-center mb-4">
                <Image src="/logo.png" alt="Hotel Sugaran Logo" width={100} height={100} className="rounded-full shadow-md" />
+             </div>
+             <div className="marquee-container bg-primary/10 py-2 rounded-lg -mb-4">
+                <p className="marquee text-lg font-semibold text-primary">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</p>
              </div>
              <TableLayout
               tables={TOTAL_TABLES}
