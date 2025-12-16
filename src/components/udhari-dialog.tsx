@@ -5,8 +5,9 @@ import type { UdhariBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
-import { NotebookText } from "lucide-react";
+import { NotebookText, NotebookPen } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -33,6 +34,8 @@ interface UdhariDialogProps {
     settledUdhariBills: UdhariBill[];
     onAddToBill: (udhariBill: UdhariBill) => void;
     activeTable: string;
+    notepad: string;
+    onNotepadChange: (value: string) => void;
 }
 
 const UdhariBillCard = ({ bill, onAddToBill, activeTable }: { bill: UdhariBill, onAddToBill?: (udhariBill: UdhariBill) => void, activeTable?: string }) => (
@@ -82,7 +85,7 @@ const UdhariBillCard = ({ bill, onAddToBill, activeTable }: { bill: UdhariBill, 
 );
 
 
-export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable }: UdhariDialogProps) {
+export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable, notepad, onNotepadChange }: UdhariDialogProps) {
 
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
 
@@ -97,13 +100,14 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="font-headline text-2xl flex justify-between items-center pr-8">
-                        <span>Udhari (Credit) List</span>
+                        <span>Udhari (Credit) List & Notepad</span>
                     </DialogTitle>
                 </DialogHeader>
                  <Tabs defaultValue="active" className="mt-4">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="active">Active ({udhariBills.length})</TabsTrigger>
                         <TabsTrigger value="settled">Settled ({settledUdhariBills.length})</TabsTrigger>
+                        <TabsTrigger value="notepad"><NotebookPen className="mr-2 h-4 w-4" />Notepad</TabsTrigger>
                     </TabsList>
                     <TabsContent value="active">
                          <div className="flex justify-between items-center pr-6 my-2">
@@ -134,6 +138,16 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
                                 </div>
                             )}
                         </ScrollArea>
+                    </TabsContent>
+                     <TabsContent value="notepad">
+                        <div className="h-[60vh] flex flex-col p-1">
+                             <Textarea 
+                                placeholder="Jot down notes, reminders, or anything else..."
+                                className="flex-grow w-full rounded-md border border-input bg-transparent px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={notepad}
+                                onChange={(e) => onNotepadChange(e.target.value)}
+                            />
+                        </div>
                     </TabsContent>
                 </Tabs>
             </DialogContent>

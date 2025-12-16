@@ -43,6 +43,7 @@ export default function Home() {
   const [udhariBills, setUdhariBills] = useState<UdhariBill[]>([]);
   const [settledUdhariBills, setSettledUdhariBills] = useState<UdhariBill[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<SettledBill[]>([]);
+  const [notepad, setNotepad] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -51,11 +52,14 @@ export default function Home() {
       const savedUdhariBills = localStorage.getItem('udhariBills');
       const savedSettledUdhariBills = localStorage.getItem('settledUdhariBills');
       const savedPaymentHistory = localStorage.getItem('paymentHistory');
+      const savedNotepad = localStorage.getItem('notepad');
 
       if (savedBills) setBills(JSON.parse(savedBills));
       if (savedUdhariBills) setUdhariBills(prev => [...prev, ...JSON.parse(savedUdhariBills)]);
       if (savedSettledUdhariBills) setSettledUdhariBills(prev => [...prev, ...JSON.parse(savedSettledUdhariBills)]);
       if (savedPaymentHistory) setPaymentHistory(prev => [...prev, ...JSON.parse(savedPaymentHistory)]);
+      if (savedNotepad) setNotepad(savedNotepad);
+
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
     }
@@ -101,6 +105,16 @@ export default function Home() {
       }
     }
   }, [paymentHistory, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      try {
+        localStorage.setItem('notepad', notepad);
+      } catch (error) {
+        console.error("Failed to save notepad to localStorage", error);
+      }
+    }
+  }, [notepad, isLoaded]);
 
 
   const addToBill = (item: MenuItem) => {
@@ -216,6 +230,8 @@ export default function Home() {
                   settledUdhariBills={settledUdhariBills}
                   onAddToBill={addUdhariToBill} 
                   activeTable={activeTable} 
+                  notepad={notepad}
+                  onNotepadChange={setNotepad}
                />
                <PaymentHistoryDialog paymentHistory={paymentHistory} udhariBills={udhariBills} />
             </div>
@@ -227,7 +243,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
              <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
-                <span className="animate-marquee text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
+                <span className="animate-marquee text-lg font-semibold text-primary px-4 whitespace-nowrap">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸 हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
              </div>
              <TableLayout
               tables={TOTAL_TABLES}
