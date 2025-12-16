@@ -53,9 +53,9 @@ export default function Home() {
       const savedPaymentHistory = localStorage.getItem('paymentHistory');
 
       if (savedBills) setBills(JSON.parse(savedBills));
-      if (savedUdhariBills) setUdhariBills(JSON.parse(savedUdhariBills));
-      if (savedSettledUdhariBills) setSettledUdhariBills(JSON.parse(savedSettledUdhariBills));
-      if (savedPaymentHistory) setPaymentHistory(JSON.parse(savedPaymentHistory));
+      if (savedUdhariBills) setUdhariBills(prev => [...prev, ...JSON.parse(savedUdhariBills)]);
+      if (savedSettledUdhariBills) setSettledUdhariBills(prev => [...prev, ...JSON.parse(savedSettledUdhariBills)]);
+      if (savedPaymentHistory) setPaymentHistory(prev => [...prev, ...JSON.parse(savedPaymentHistory)]);
     } catch (error) {
       console.error("Failed to load data from localStorage", error);
     }
@@ -227,10 +227,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 space-y-8">
              <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
-                <div className="flex animate-marquee">
-                    <span className="text-lg font-semibold text-primary px-4 whitespace-nowrap">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                    <span className="text-lg font-semibold text-primary px-4 whitespace-nowrap">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
-                </div>
+                <span className="animate-marquee text-lg font-semibold text-primary px-4">हॉटेल सुग्रण मध्ये आपले सहर्ष स्वागत आहे 🌸</span>
              </div>
              <TableLayout
               tables={TOTAL_TABLES}
@@ -261,3 +258,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
