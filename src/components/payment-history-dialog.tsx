@@ -378,7 +378,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                                 selected={{ from: firstTransactionDate, to: new Date() }}
                                 fromDate={firstTransactionDate}
                                 toDate={new Date()}
-                                numberOfMonths={isMobile ? 1 : 2}
+                                numberOfMonths={1}
                                 modifiers={{ paymentDay: paymentDays }}
                                 modifiersStyles={{ paymentDay: { border: "2px solid var(--primary-foreground)" } }}
                             />
