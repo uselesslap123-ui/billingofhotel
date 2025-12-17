@@ -136,9 +136,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const paymentDays = useMemo(() => {
         const daysWithPayments = new Set<string>();
         paymentHistory.forEach(p => {
-            if (p.date) {
-                daysWithPayments.add(format(p.date.toDate ? p.date.toDate() : new Date(p.date), 'yyyy-MM-dd'));
-            }
+            daysWithPayments.add(format(p.date.toDate ? p.date.toDate() : new Date(p.date), 'yyyy-MM-dd'));
         });
         return Array.from(daysWithPayments).map(dayStr => new Date(dayStr));
     }, [paymentHistory]);
@@ -576,5 +574,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </Dialog>
     );
 }
+
 
     
