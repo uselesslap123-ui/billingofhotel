@@ -45,14 +45,8 @@ interface UdhariDialogProps {
     onUpdateUdhariNotes: (udhariId: string, notes: string) => void;
 }
 
-const formatDate = (date: any) => {
-    if (!date) return 'N/A';
-    // Check if it's a Firebase Timestamp
-    if (date.toDate) {
-        return format(date.toDate(), "PPpp");
-    }
-    // Fallback for string or Date object
-    return format(new Date(date), "PPpp");
+const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "PPpp");
 };
 
 const UdhariBillNotepad = ({ bill, onSave }: { bill: UdhariBill, onSave: (notes: string) => void }) => {

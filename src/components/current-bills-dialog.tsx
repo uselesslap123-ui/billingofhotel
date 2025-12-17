@@ -52,7 +52,8 @@ export function CurrentBillsDialog({ bills }: CurrentBillsDialogProps) {
     const activeBillEntries = Object.entries(bills).filter(([, items]) => items.length > 0);
     
     const totalActiveAmount = useMemo(() => {
-        return activeBillEntries.reduce((total, [, items]) => {
+        return activeBillEntries.reduce((total, [, billItems]) => {
+            const items = Array.isArray(billItems) ? billItems : [];
             const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
             const gstAmount = subtotal * GST_RATE;
             return total + subtotal + gstAmount;
@@ -86,7 +87,7 @@ export function CurrentBillsDialog({ bills }: CurrentBillsDialogProps) {
                         ) : (
                             <div className="space-y-4">
                                 {activeBillEntries.map(([table, items]) => (
-                                    <BillCard key={table} table={table} items={items} />
+                                     <BillCard key={table} table={table} items={Array.isArray(items) ? items : []} />
                                 ))}
                             </div>
                         )}
