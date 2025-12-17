@@ -6,8 +6,8 @@ import type { SettledBill, UdhariBill, BillItem } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { format, isToday, isThisWeek, isThisMonth, startOfDay, isSameDay } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, Calendar as CalendarIcon, X } from "lucide-react";
+import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, X } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -26,8 +26,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -112,17 +110,9 @@ type ItemSalesReport = {
 }
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-
-    const filteredPayments = useMemo(() => {
-        if (!selectedDate) return paymentHistory;
-        return paymentHistory.filter(p => isSameDay(new Date(p.date), selectedDate));
-    }, [paymentHistory, selectedDate]);
-
     const cashPayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Cash'), [paymentHistory]);
     const onlinePayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Online'), [paymentHistory]);
     const historyTableRef = useRef<HTMLDivElement>(null);
-    const isMobile = useIsMobile();
     
     const calculateTotals = (payments: SettledBill[], udharis: UdhariBill[]) => {
         return {
@@ -131,16 +121,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
             udhari: udharis.reduce((acc, bill) => acc + bill.totalAmount, 0)
         }
     }
-
-    const firstTransactionDate = useMemo(() => {
-        const allDates = [...paymentHistory.map(p => new Date(p.date)), ...udhariBills.map(u => new Date(u.date))];
-        if (allDates.length === 0) return new Date();
-        return new Date(Math.min.apply(null, allDates.map(d => d.getTime())));
-    }, [paymentHistory, udhariBills]);
-
-    const paymentDays = useMemo(() => {
-        return paymentHistory.map(p => startOfDay(new Date(p.date)));
-    }, [paymentHistory]);
 
     const dailyData = useMemo(() => {
         const dailyPayments = paymentHistory.filter(p => isToday(new Date(p.date)));
@@ -274,21 +254,13 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsList>
                         
                         <TabsContent value="all" className="mt-4">
-                            {selectedDate && (
-                                <div className="flex items-center justify-center gap-2 mb-4 p-2 rounded-lg bg-accent/50 text-accent-foreground">
-                                    <p className="text-sm font-medium">Showing payments for {format(selectedDate, 'PPP')}</p>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedDate(undefined)}>
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            )}
-                            {filteredPayments.length === 0 ? (
+                            {paymentHistory.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-10">
-                                    {selectedDate ? `No payments recorded on ${format(selectedDate, 'PPP')}.` : 'No payments recorded yet.'}
+                                    No payments recorded yet.
                                 </p>
                             ) : (
                                 <div className="space-y-4">
-                                    {filteredPayments.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
+                                    {paymentHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
                                 </div>
                             )}
                         </TabsContent>
@@ -385,23 +357,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     </Tabs>
                 </ScrollArea>
                 <div className="mt-4 pt-4 border-t flex justify-end gap-2">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline"><CalendarIcon className="mr-2 h-4 w-4" /> Calendar</Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={setSelectedDate}
-                                fromDate={firstTransactionDate}
-                                toDate={new Date()}
-                                numberOfMonths={1}
-                                modifiers={{ paymentDay: paymentDays }}
-                                modifiersClassNames={{ paymentDay: 'day-paymentDay' }}
-                            />
-                        </PopoverContent>
-                    </Popover>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive" className="bg-red-500/15 text-red-500 border border-red-500/30 hover:bg-red-500/25 hover:text-red-600">
@@ -530,3 +485,5 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </Dialog>
     );
 }
+
+    
