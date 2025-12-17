@@ -6,8 +6,8 @@ import type { SettledBill, UdhariBill, BillItem } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart, Download } from "lucide-react";
+import { format, isToday, isThisWeek, isThisMonth, startOfDay } from 'date-fns';
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, Calendar as CalendarIcon } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -26,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -122,6 +124,16 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
             udhari: udharis.reduce((acc, bill) => acc + bill.totalAmount, 0)
         }
     }
+
+    const firstTransactionDate = useMemo(() => {
+        const allDates = [...paymentHistory.map(p => new Date(p.date)), ...udhariBills.map(u => new Date(u.date))];
+        if (allDates.length === 0) return new Date();
+        return new Date(Math.min.apply(null, allDates.map(d => d.getTime())));
+    }, [paymentHistory, udhariBills]);
+
+    const paymentDays = useMemo(() => {
+        return paymentHistory.map(p => startOfDay(new Date(p.date)));
+    }, [paymentHistory]);
 
     const dailyData = useMemo(() => {
         const dailyPayments = paymentHistory.filter(p => isToday(new Date(p.date)));
@@ -355,7 +367,23 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsContent>
                     </Tabs>
                 </ScrollArea>
-                <div className="mt-4 pt-4 border-t flex justify-end">
+                <div className="mt-4 pt-4 border-t flex justify-end gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline"><CalendarIcon className="mr-2 h-4 w-4" /> Calendar</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="range"
+                                selected={{ from: firstTransactionDate, to: new Date() }}
+                                fromDate={firstTransactionDate}
+                                toDate={new Date()}
+                                numberOfMonths={isMobile ? 1 : 2}
+                                modifiers={{ paymentDay: paymentDays }}
+                                modifiersStyles={{ paymentDay: { border: "2px solid var(--primary-foreground)" } }}
+                            />
+                        </PopoverContent>
+                    </Popover>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive" className="bg-red-500/15 text-red-500 border border-red-500/30 hover:bg-red-500/25 hover:text-red-600">
@@ -379,7 +407,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                 </div>
 
                 {/* Hidden content for PDF generation */}
-                <div className="opacity-0 absolute top-0 left-0 h-0 w-0 overflow-hidden" >
+                <div className="absolute top-0 left-0 -z-10 opacity-0 h-0 w-0 overflow-hidden" >
                     <div ref={historyTableRef} className="p-8 bg-white text-black font-sans w-[1000px]">
                         <h2 className="text-3xl font-bold text-center mb-6">Hisab-Kitab Report</h2>
                         <p className="text-center text-sm text-gray-500 mb-8">Generated on: {format(new Date(), "PPpp")}</p>
@@ -485,3 +513,4 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     );
 }
 
+    
