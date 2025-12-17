@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useRef } from "react";
@@ -5,8 +6,8 @@ import type { SettledBill, UdhariBill, BillItem } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { format, isToday, isThisWeek, isThisMonth, startOfDay } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, Calendar as CalendarIcon } from "lucide-react";
+import { format, isToday, isThisWeek, isThisMonth, startOfDay, isSameDay } from 'date-fns';
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, Calendar as CalendarIcon, X } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -111,6 +112,13 @@ type ItemSalesReport = {
 }
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+
+    const filteredPayments = useMemo(() => {
+        if (!selectedDate) return paymentHistory;
+        return paymentHistory.filter(p => isSameDay(new Date(p.date), selectedDate));
+    }, [paymentHistory, selectedDate]);
+
     const cashPayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Cash'), [paymentHistory]);
     const onlinePayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Online'), [paymentHistory]);
     const historyTableRef = useRef<HTMLDivElement>(null);
@@ -266,11 +274,21 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsList>
                         
                         <TabsContent value="all" className="mt-4">
-                            {paymentHistory.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-10">No payments recorded yet.</p>
+                            {selectedDate && (
+                                <div className="flex items-center justify-center gap-2 mb-4 p-2 rounded-lg bg-accent/50 text-accent-foreground">
+                                    <p className="text-sm font-medium">Showing payments for {format(selectedDate, 'PPP')}</p>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedDate(undefined)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            {filteredPayments.length === 0 ? (
+                                <p className="text-center text-muted-foreground py-10">
+                                    {selectedDate ? `No payments recorded on ${format(selectedDate, 'PPP')}.` : 'No payments recorded yet.'}
+                                </p>
                             ) : (
                                 <div className="space-y-4">
-                                    {paymentHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
+                                    {filteredPayments.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
                                 </div>
                             )}
                         </TabsContent>
@@ -373,8 +391,9 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
                             <Calendar
-                                mode="range"
-                                selected={{ from: firstTransactionDate, to: new Date() }}
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
                                 fromDate={firstTransactionDate}
                                 toDate={new Date()}
                                 numberOfMonths={1}
