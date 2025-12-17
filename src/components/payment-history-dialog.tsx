@@ -136,14 +136,16 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const paymentDays = useMemo(() => {
         const daysWithPayments = new Set<string>();
         paymentHistory.forEach(p => {
-            daysWithPayments.add(format(p.date.toDate ? p.date.toDate() : new Date(p.date), 'yyyy-MM-dd'));
+            if (p.date) {
+                daysWithPayments.add(format(p.date.toDate ? p.date.toDate() : new Date(p.date), 'yyyy-MM-dd'));
+            }
         });
         return Array.from(daysWithPayments).map(dayStr => new Date(dayStr));
     }, [paymentHistory]);
     
     const filteredPaymentHistory = useMemo(() => {
         if (!selectedDate) return paymentHistory;
-        return paymentHistory.filter(p => isSameDay(p.date.toDate ? p.date.toDate() : new Date(p.date), selectedDate));
+        return paymentHistory.filter(p => p.date && isSameDay(p.date.toDate ? p.date.toDate() : new Date(p.date), selectedDate));
     }, [paymentHistory, selectedDate]);
     
     const dailyTotalForSelectedDate = useMemo(() => {
@@ -163,22 +165,22 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     
     const dailyData = useMemo(() => {
         const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
-        const dailyPayments = paymentHistory.filter(p => isToday(toDate(p.date)));
-        const dailyUdharis = udhariBills.filter(u => isToday(toDate(u.date)));
+        const dailyPayments = paymentHistory.filter(p => p.date && isToday(toDate(p.date)));
+        const dailyUdharis = udhariBills.filter(u => u.date && isToday(toDate(u.date)));
         return calculateTotals(dailyPayments, dailyUdharis);
     }, [paymentHistory, udhariBills]);
 
     const weeklyData = useMemo(() => {
         const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
-        const weeklyPayments = paymentHistory.filter(p => isThisWeek(toDate(p.date), { weekStartsOn: 1 }));
-        const weeklyUdharis = udhariBills.filter(u => isThisWeek(toDate(u.date), { weekStartsOn: 1 }));
+        const weeklyPayments = paymentHistory.filter(p => p.date && isThisWeek(toDate(p.date), { weekStartsOn: 1 }));
+        const weeklyUdharis = udhariBills.filter(u => u.date && isThisWeek(toDate(u.date), { weekStartsOn: 1 }));
         return calculateTotals(weeklyPayments, weeklyUdharis);
     }, [paymentHistory, udhariBills]);
 
     const monthlyData = useMemo(() => {
         const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
-        const monthlyPayments = paymentHistory.filter(p => isThisMonth(toDate(p.date)));
-        const monthlyUdharis = udhariBills.filter(u => isThisMonth(toDate(u.date)));
+        const monthlyPayments = paymentHistory.filter(p => p.date && isThisMonth(toDate(p.date)));
+        const monthlyUdharis = udhariBills.filter(u => u.date && isThisMonth(toDate(u.date)));
         return calculateTotals(monthlyPayments, monthlyUdharis);
     }, [paymentHistory, udhariBills]);
     
@@ -202,7 +204,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const settledBillsRows = paymentHistory.map(bill => [
             "Settled Bill",
             bill.id,
-            format(toDate(bill.date), "yyyy-MM-dd HH:mm:ss"),
+            bill.date ? format(toDate(bill.date), "yyyy-MM-dd HH:mm:ss") : 'N/A',
             bill.table,
             bill.totalAmount.toFixed(2),
             bill.paymentMethod,
@@ -212,7 +214,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const udhariBillsRows = udhariBills.map(bill => [
             "Udhari Bill",
             bill.id,
-            format(toDate(bill.date), "yyyy-MM-dd HH:mm:ss"),
+            bill.date ? format(toDate(bill.date), "yyyy-MM-dd HH:mm:ss") : 'N/A',
             bill.customerName,
             bill.totalAmount.toFixed(2),
             "Udhari",
@@ -325,15 +327,15 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                                     </CardHeader>
                                 </Card>
                             )}
-                            {filteredPaymentHistory.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-10">
-                                    {selectedDate ? `No payments recorded on ${format(selectedDate, "PPP")}.` : "No payments recorded yet."}
-                                </p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {filteredPaymentHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
-                                </div>
-                            )}
+                            <div className="space-y-4">
+                                {filteredPaymentHistory.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-10">
+                                        {selectedDate ? `No payments recorded on ${format(selectedDate, "PPP")}.` : "No payments recorded yet."}
+                                    </p>
+                                ) : (
+                                    filteredPaymentHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)
+                                )}
+                            </div>
                         </TabsContent>
 
                         <TabsContent value="cash" className="mt-4">
@@ -442,6 +444,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                                 initialFocus
                                 modifiers={{ paymentDay: paymentDays }}
                                 modifiersClassNames={{ paymentDay: 'day-paymentDay' }}
+                                numberOfMonths={1}
                             />
                         </PopoverContent>
                     </Popover>
@@ -468,7 +471,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     </AlertDialog>
                 </div>
 
-                <div className="opacity-0 absolute -z-10 top-0 left-0 h-0 w-0 overflow-hidden" >
+                <div className="opacity-0 absolute -z-50 top-0 left-0 h-0 w-0 overflow-hidden" >
                     <div ref={historyTableRef} className="p-8 bg-white text-black font-sans w-[1000px]">
                         <h2 className="text-3xl font-bold text-center mb-6">Hisab-Kitab Report</h2>
                         <p className="text-center text-sm text-gray-500 mb-8">Generated on: {format(new Date(), "PPpp")}</p>
@@ -573,3 +576,5 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </Dialog>
     );
 }
+
+    
