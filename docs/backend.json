@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "bill": {
+      "title": "Bill",
+      "description": "Represents an active bill for a table or parcel.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "description": "List of items in the bill."
+        }
+      }
+    },
+    "udhariBill": {
+      "title": "Udhari Bill",
+      "description": "Represents a bill on credit.",
+      "type": "object",
+      "properties": {
+        "customerName": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "status": {
+            "type": "string",
+            "enum": ["active", "settled"]
+        }
+      },
+      "required": ["customerName", "items", "totalAmount", "date", "status"]
+    },
+    "settledBill": {
+      "title": "Settled Bill",
+      "description": "Represents a paid bill.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["Cash", "Online"]
+        },
+        "table": {
+          "type": "string"
+        }
+      },
+      "required": ["items", "totalAmount", "date", "paymentMethod", "table"]
+    },
+    "note": {
+      "title": "Note",
+      "description": "A simple note.",
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+       "required": ["content", "date"]
+    }
+  },
+  "auth": {
+    "providers": []
+  },
+  "firestore": {
+    "/bills/{tableId}": {
+      "schema": {
+        "$ref": "#/entities/bill"
+      },
+      "description": "Stores active bills for each table."
+    },
+    "/udhariBills/{udhariBillId}": {
+      "schema": {
+        "$ref": "#/entities/udhariBill"
+      },
+      "description": "Stores udhari (credit) bills."
+    },
+    "/settledBills/{settledBillId}": {
+      "schema": {
+        "$ref": "#/entities/settledBill"
+      },
+      "description": "Stores paid/settled bills."
+    },
+    "/notes/{noteId}": {
+      "schema": {
+        "$ref": "#/entities/note"
+      },
+      "description": "Stores general notes."
+    }
+  }
+}

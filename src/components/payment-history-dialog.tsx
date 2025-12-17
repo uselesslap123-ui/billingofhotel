@@ -2,12 +2,12 @@
 "use client";
 
 import { useMemo, useState, useRef } from "react";
-import type { SettledBill, UdhariBill, BillItem } from "@/app/page";
+import type { SettledBill, UdhariBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { format, isToday, isThisWeek, isThisMonth, startOfDay } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart, Download } from "lucide-react";
+import { format, isToday, isThisWeek, isThisMonth, startOfDay, isSameDay } from 'date-fns';
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, Calendar as CalendarIcon, X } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -32,12 +32,21 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "./ui/table";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
 
 
 interface PaymentHistoryDialogProps {
     paymentHistory: SettledBill[];
     udhariBills: UdhariBill[];
 }
+
+const formatDate = (date: any, formatString: string) => {
+    if (!date) return 'N/A';
+    if (date.toDate) return format(date.toDate(), formatString);
+    return format(new Date(date), formatString);
+}
+
 
 const SettledBillCard = ({ bill }: { bill: SettledBill }) => {
     const isMobile = useIsMobile();
@@ -48,7 +57,7 @@ const SettledBillCard = ({ bill }: { bill: SettledBill }) => {
         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
             <div className="col-span-2 sm:col-span-1">
                 <p className="font-bold text-lg">{bill.table === 'Parcel' ? 'Parcel' : `Table ${bill.table}`}</p>
-                <p className="text-sm text-muted-foreground">{format(new Date(bill.date), dateFormat)}</p>
+                <p className="text-sm text-muted-foreground">{formatDate(bill.date, dateFormat)}</p>
             </div>
             <div className="col-span-2 sm:col-span-1 sm:text-right">
                 <p className="font-bold text-lg">Rs.{bill.totalAmount.toFixed(2)}</p>
@@ -110,33 +119,66 @@ type ItemSalesReport = {
 }
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
-    const cashPayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Cash'), [paymentHistory]);
-    const onlinePayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Online'), [paymentHistory]);
     const historyTableRef = useRef<HTMLDivElement>(null);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     
+    const allTransactions = useMemo(() => {
+        const settled = paymentHistory.map(p => ({...p, date: p.date?.toDate ? p.date.toDate() : new Date(p.date) }));
+        const udhari = udhariBills.map(u => ({...u, date: u.date?.toDate ? u.date.toDate() : new Date(u.date) }));
+        return [...settled, ...udhari].sort((a,b) => b.date.getTime() - a.date.getTime());
+    }, [paymentHistory, udhariBills]);
+
+    const firstTransactionDate = useMemo(() => {
+        if (allTransactions.length === 0) return new Date();
+        return allTransactions[allTransactions.length - 1].date;
+    }, [allTransactions]);
+
+    const paymentDays = useMemo(() => {
+        const daysWithPayments = new Set<string>();
+        paymentHistory.forEach(p => {
+            daysWithPayments.add(format(p.date.toDate ? p.date.toDate() : new Date(p.date), 'yyyy-MM-dd'));
+        });
+        return Array.from(daysWithPayments).map(dayStr => new Date(dayStr));
+    }, [paymentHistory]);
+    
+    const filteredPaymentHistory = useMemo(() => {
+        if (!selectedDate) return paymentHistory;
+        return paymentHistory.filter(p => isSameDay(p.date.toDate ? p.date.toDate() : new Date(p.date), selectedDate));
+    }, [paymentHistory, selectedDate]);
+    
+    const dailyTotalForSelectedDate = useMemo(() => {
+        if (!selectedDate) return 0;
+        return filteredPaymentHistory.reduce((acc, bill) => acc + bill.totalAmount, 0);
+    }, [filteredPaymentHistory, selectedDate]);
+
+
     const calculateTotals = (payments: SettledBill[], udharis: UdhariBill[]) => {
+        const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
         return {
             cash: payments.filter(p => p.paymentMethod === 'Cash').reduce((acc, bill) => acc + bill.totalAmount, 0),
             online: payments.filter(p => p.paymentMethod === 'Online').reduce((acc, bill) => acc + bill.totalAmount, 0),
             udhari: udharis.reduce((acc, bill) => acc + bill.totalAmount, 0)
         }
     }
-
+    
     const dailyData = useMemo(() => {
-        const dailyPayments = paymentHistory.filter(p => isToday(new Date(p.date)));
-        const dailyUdharis = udhariBills.filter(u => isToday(new Date(u.date)));
+        const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
+        const dailyPayments = paymentHistory.filter(p => isToday(toDate(p.date)));
+        const dailyUdharis = udhariBills.filter(u => isToday(toDate(u.date)));
         return calculateTotals(dailyPayments, dailyUdharis);
     }, [paymentHistory, udhariBills]);
 
     const weeklyData = useMemo(() => {
-        const weeklyPayments = paymentHistory.filter(p => isThisWeek(new Date(p.date), { weekStartsOn: 1 }));
-        const weeklyUdharis = udhariBills.filter(u => isThisWeek(new Date(u.date), { weekStartsOn: 1 }));
+        const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
+        const weeklyPayments = paymentHistory.filter(p => isThisWeek(toDate(p.date), { weekStartsOn: 1 }));
+        const weeklyUdharis = udhariBills.filter(u => isThisWeek(toDate(u.date), { weekStartsOn: 1 }));
         return calculateTotals(weeklyPayments, weeklyUdharis);
     }, [paymentHistory, udhariBills]);
 
     const monthlyData = useMemo(() => {
-        const monthlyPayments = paymentHistory.filter(p => isThisMonth(new Date(p.date)));
-        const monthlyUdharis = udhariBills.filter(u => isThisMonth(new Date(u.date)));
+        const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
+        const monthlyPayments = paymentHistory.filter(p => isThisMonth(toDate(p.date)));
+        const monthlyUdharis = udhariBills.filter(u => isThisMonth(toDate(u.date)));
         return calculateTotals(monthlyPayments, monthlyUdharis);
     }, [paymentHistory, udhariBills]);
     
@@ -154,11 +196,13 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
             ["All Time Summary", (allTimeData.cash + allTimeData.online).toFixed(2), allTimeData.cash.toFixed(2), allTimeData.online.toFixed(2), allTimeData.udhari.toFixed(2)],
         ];
         
+        const toDate = (date: any) => date?.toDate ? date.toDate() : new Date(date);
+
         const settledBillsHeaders = ["Type", "ID", "Date", "Table/Customer", "Total Amount", "Payment Method", "Items"];
         const settledBillsRows = paymentHistory.map(bill => [
             "Settled Bill",
             bill.id,
-            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
+            format(toDate(bill.date), "yyyy-MM-dd HH:mm:ss"),
             bill.table,
             bill.totalAmount.toFixed(2),
             bill.paymentMethod,
@@ -168,7 +212,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const udhariBillsRows = udhariBills.map(bill => [
             "Udhari Bill",
             bill.id,
-            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
+            format(toDate(bill.date), "yyyy-MM-dd HH:mm:ss"),
             bill.customerName,
             bill.totalAmount.toFixed(2),
             "Udhari",
@@ -237,6 +281,9 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const mostSellingItems = useMemo(() => itemSalesReport.slice(0, 5), [itemSalesReport]);
     
     const totalUdhari = useMemo(() => udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0), [udhariBills]);
+    
+    const cashPayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Cash'), [paymentHistory]);
+    const onlinePayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Online'), [paymentHistory]);
 
 
     return (
@@ -267,13 +314,24 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsList>
                         
                         <TabsContent value="all" className="mt-4">
-                            {paymentHistory.length === 0 ? (
+                            {selectedDate && (
+                                <Card className="mb-4">
+                                    <CardHeader className="flex-row items-center justify-between pb-4">
+                                        <div>
+                                            <CardTitle>Showing payments for {format(selectedDate, "PPP")}</CardTitle>
+                                            <CardDescription>Total Revenue: Rs.{dailyTotalForSelectedDate.toFixed(2)}</CardDescription>
+                                        </div>
+                                        <Button variant="ghost" size="icon" onClick={() => setSelectedDate(undefined)}><X className="h-4 w-4" /></Button>
+                                    </CardHeader>
+                                </Card>
+                            )}
+                            {filteredPaymentHistory.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-10">
-                                    No payments recorded yet.
+                                    {selectedDate ? `No payments recorded on ${format(selectedDate, "PPP")}.` : "No payments recorded yet."}
                                 </p>
                             ) : (
                                 <div className="space-y-4">
-                                    {paymentHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
+                                    {filteredPaymentHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
                                 </div>
                             )}
                         </TabsContent>
@@ -370,6 +428,24 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     </Tabs>
                 </ScrollArea>
                 <div className="mt-4 pt-4 border-t flex justify-end gap-2 flex-wrap">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline"><CalendarIcon className="mr-2 h-4 w-4" /> Calendar</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                fromDate={firstTransactionDate}
+                                toDate={new Date()}
+                                initialFocus
+                                modifiers={{ paymentDay: paymentDays }}
+                                modifiersClassNames={{ paymentDay: 'day-paymentDay' }}
+                            />
+                        </PopoverContent>
+                    </Popover>
+
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive" className="bg-red-500/15 text-red-500 border border-red-500/30 hover:bg-red-500/25 hover:text-red-600">
@@ -392,7 +468,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     </AlertDialog>
                 </div>
 
-                {/* Hidden content for PDF generation */}
                 <div className="opacity-0 absolute -z-10 top-0 left-0 h-0 w-0 overflow-hidden" >
                     <div ref={historyTableRef} className="p-8 bg-white text-black font-sans w-[1000px]">
                         <h2 className="text-3xl font-bold text-center mb-6">Hisab-Kitab Report</h2>
@@ -456,7 +531,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                             <TableBody>
                                 {paymentHistory.map((bill) => (
                                     <TableRow key={bill.id}>
-                                        <TableCell>{format(new Date(bill.date), 'Pp')}</TableCell>
+                                        <TableCell>{formatDate(bill.date, 'Pp')}</TableCell>
                                         <TableCell>{bill.table}</TableCell>
                                         <TableCell>{bill.paymentMethod}</TableCell>
                                         <TableCell className="text-right font-mono">Rs.{bill.totalAmount.toFixed(2)}</TableCell>
@@ -478,7 +553,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                                 <TableBody>
                                     {udhariBills.map((bill) => (
                                         <TableRow key={bill.id}>
-                                            <TableCell>{format(new Date(bill.date), 'Pp')}</TableCell>
+                                            <TableCell>{formatDate(bill.date, 'Pp')}</TableCell>
                                             <TableCell>{bill.customerName}</TableCell>
                                             <TableCell className="text-right font-mono">Rs.{bill.totalAmount.toFixed(2)}</TableCell>
                                         </TableRow>
@@ -498,5 +573,3 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </Dialog>
     );
 }
-
-    

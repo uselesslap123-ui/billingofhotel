@@ -1,7 +1,10 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { collection, doc, writeBatch, deleteDoc, addDoc, updateDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
+import { useFirestore, useCollection } from "@/firebase";
+
 import type { MenuItem } from "@/lib/menu-items";
 import { MenuSection } from "@/components/menu-section";
 import { BillingSection } from "@/components/billing-section";
@@ -10,12 +13,16 @@ import { PaymentHistoryDialog } from "@/components/payment-history-dialog";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
 import { CurrentBillsDialog } from "@/components/current-bills-dialog";
-import Image from "next/image";
+import { FirebaseProvider } from "@/firebase/client-provider";
 
 export type BillItem = MenuItem & { quantity: number };
 
+export type Bill = {
+  id: string;
+  items: BillItem[];
+};
 export type Bills = {
-  [table: string]: BillItem[];
+  [table: string]: Bill;
 };
 
 export type UdhariBill = {
@@ -23,15 +30,16 @@ export type UdhariBill = {
   customerName: string;
   items: BillItem[];
   totalAmount: number;
-  date: string;
+  date: any;
   notes?: string;
+  status: 'active' | 'settled';
 };
 
 export type SettledBill = {
   id: string;
   items: BillItem[];
   totalAmount: number;
-  date: string;
+  date: any;
   paymentMethod: "Cash" | "Online";
   table: string;
 };
@@ -39,108 +47,39 @@ export type SettledBill = {
 export type Note = {
   id: string;
   content: string;
-  date: string;
+  date: any;
 };
-
 
 const INITIAL_TABLES = [...Array.from({ length: 8 }, (_, i) => (i + 1).toString()), 'Parcel'];
 
-export default function Home() {
-  const [bills, setBills] = useState<Bills>({});
+function HomePage() {
+  const firestore = useFirestore();
   const [activeTable, setActiveTable] = useState("1");
-  const [udhariBills, setUdhariBills] = useState<UdhariBill[]>([]);
-  const [settledUdhariBills, setSettledUdhariBills] = useState<UdhariBill[]>([]);
-  const [paymentHistory, setPaymentHistory] = useState<SettledBill[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
   const [tables, setTables] = useState<string[]>(INITIAL_TABLES);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    try {
-      const savedBills = localStorage.getItem('bills');
-      const savedUdhariBills = localStorage.getItem('udhariBills');
-      const savedSettledUdhariBills = localStorage.getItem('settledUdhariBills');
-      const savedPaymentHistory = localStorage.getItem('paymentHistory');
-      const savedNotes = localStorage.getItem('notes');
-      const savedTables = localStorage.getItem('tables');
+  const { data: udhariBillsData, loading: loadingUdhari } = useCollection<UdhariBill>(
+    firestore ? query(collection(firestore, "udhariBills"), orderBy("date", "desc")) : null
+  );
+  const { data: settledBillsData, loading: loadingSettled } = useCollection<SettledBill>(
+    firestore ? query(collection(firestore, "settledBills"), orderBy("date", "desc")) : null
+  );
+  const { data: notesData, loading: loadingNotes } = useCollection<Note>(
+     firestore ? query(collection(firestore, "notes"), orderBy("date", "desc")) : null
+  );
+  const { data: billsData, loading: loadingBills } = useCollection<Bill>(
+    firestore ? collection(firestore, 'bills') : null
+  );
 
-      if (savedBills) setBills(JSON.parse(savedBills));
-      if (savedUdhariBills) setUdhariBills(prev => [...prev, ...JSON.parse(savedUdhariBills)]);
-      if (savedSettledUdhariBills) setSettledUdhariBills(prev => [...prev, ...JSON.parse(savedSettledUdhariBills)]);
-      if (savedPaymentHistory) setPaymentHistory(prev => [...prev, ...JSON.parse(savedPaymentHistory)]);
-      if (savedNotes) setNotes(JSON.parse(savedNotes));
-      if (savedTables) {
-        const parsedTables = JSON.parse(savedTables);
-        if(Array.isArray(parsedTables) && parsedTables.length > 0) {
-            setTables(parsedTables);
-        }
-      }
-
-    } catch (error) {
-      console.error("Failed to load data from localStorage", error);
-    }
-    setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem('bills', JSON.stringify(bills));
-      } catch (error) {
-        console.error("Failed to save bills to localStorage", error);
-      }
-    }
-  }, [bills, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem('udhariBills', JSON.stringify(udhariBills));
-      } catch (error) {
-        console.error("Failed to save udhariBills to localStorage", error);
-      }
-    }
-  }, [udhariBills, isLoaded]);
+  const bills: Bills = (billsData || []).reduce((acc: Bills, bill: Bill) => {
+    acc[bill.id] = bill;
+    return acc;
+  }, {});
   
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem('settledUdhariBills', JSON.stringify(settledUdhariBills));
-      } catch (error) {
-        console.error("Failed to save settledUdhariBills to localStorage", error);
-      }
-    }
-  }, [settledUdhariBills, isLoaded]);
+  const udhariBills = (udhariBillsData || []).filter(b => b.status === 'active');
+  const settledUdhariBills = (udhariBillsData || []).filter(b => b.status === 'settled');
 
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem('paymentHistory', JSON.stringify(paymentHistory));
-      } catch (error) {
-        console.error("Failed to save paymentHistory to localStorage", error);
-      }
-    }
-  }, [paymentHistory, isLoaded]);
 
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem('notes', JSON.stringify(notes));
-      } catch (error) {
-        console.error("Failed to save notes to localStorage", error);
-      }
-    }
-  }, [notes, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem('tables', JSON.stringify(tables));
-      } catch (error) {
-        console.error("Failed to save tables to localStorage", error);
-      }
-    }
-  }, [tables, isLoaded]);
+  const isLoaded = !loadingUdhari && !loadingSettled && !loadingNotes && !loadingBills && firestore;
 
   const handleAddTable = () => {
     setTables(prevTables => {
@@ -158,137 +97,147 @@ export default function Home() {
       } else {
         newTables.push(nextTableNumber.toString());
       }
+      // Note: We are not saving tables to Firestore as it's part of local UI state for now.
       return newTables;
     });
   };
 
-  const handleDeleteTable = (tableToDelete: string) => {
+  const handleDeleteTable = async (tableToDelete: string) => {
     setTables(prevTables => {
       const newTables = prevTables.filter(t => t !== tableToDelete);
-      // If the deleted table was the active one, switch to another table.
       if (activeTable === tableToDelete) {
         setActiveTable(newTables[0] || '1');
       }
       return newTables;
     });
 
-    // Also remove any bill associated with that table
-    setBills(prevBills => {
-      const newBills = { ...prevBills };
-      delete newBills[tableToDelete];
-      return newBills;
-    });
-  };
-
-  const addToBill = (item: MenuItem) => {
-    setBills((prevBills) => {
-      const tableBill = prevBills[activeTable] || [];
-      const existingItem = tableBill.find((i) => i.id === item.id);
-
-      let newTableBill;
-      if (existingItem) {
-        newTableBill = tableBill.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      } else {
-        newTableBill = [...tableBill, { ...item, quantity: 1 }];
-      }
-
-      return { ...prevBills, [activeTable]: newTableBill };
-    });
-  };
-
-  const addUdhariToBill = (udhariBill: UdhariBill) => {
-    setBills((prevBills) => {
-      const tableBill = prevBills[activeTable] || [];
-      const newTableBill = [...tableBill];
-
-      udhariBill.items.forEach(udhariItem => {
-        const existingItem = newTableBill.find(i => i.id === udhariItem.id);
-        if (existingItem) {
-          existingItem.quantity += udhariItem.quantity;
-        } else {
-          newTableBill.push(udhariItem);
-        }
-      });
-
-      return { ...prevBills, [activeTable]: newTableBill };
-    });
-    // Settle the udhari bill after adding it
-    settleUdhari(udhariBill.id);
-  };
-
-  const updateQuantity = (itemId: number, quantity: number) => {
-    setBills((prevBills) => {
-      const tableBill = prevBills[activeTable] || [];
-      let newTableBill;
-
-      if (quantity <= 0) {
-        newTableBill = tableBill.filter((i) => i.id !== itemId);
-      } else {
-        newTableBill = tableBill.map((i) =>
-          i.id === itemId ? { ...i, quantity } : i
-        );
-      }
-      
-      const newBills = { ...prevBills, [activeTable]: newTableBill };
-      if(newTableBill.length === 0) {
-        delete newBills[activeTable];
-      }
-
-      return newBills;
-    });
-  };
-
-  const clearBill = () => {
-     setBills((prevBills) => {
-        const newBills = {...prevBills};
-        delete newBills[activeTable];
-        return newBills;
-     });
-  }
-
-  const saveToUdhari = (udhariBill: UdhariBill) => {
-    setUdhariBills(prev => [...prev, udhariBill]);
-    clearBill();
-  }
-
-  const settleUdhari = (udhariId: string) => {
-    const billToSettle = udhariBills.find(bill => bill.id === udhariId);
-    if(billToSettle) {
-        setSettledUdhariBills(prev => [billToSettle, ...prev]);
-        setUdhariBills(prev => prev.filter(bill => bill.id !== udhariId));
+    if (firestore && bills[tableToDelete]) {
+      await deleteDoc(doc(firestore, "bills", tableToDelete));
     }
+  };
+
+  const addToBill = async (item: MenuItem) => {
+    if (!firestore) return;
+
+    const tableBill = bills[activeTable]?.items || [];
+    const billDocRef = doc(firestore, "bills", activeTable);
+    const existingItem = tableBill.find((i) => i.id === item.id);
+
+    let newTableBill;
+    if (existingItem) {
+      newTableBill = tableBill.map((i) =>
+        i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+      );
+    } else {
+      newTableBill = [...tableBill, { ...item, quantity: 1 }];
+    }
+    
+    await writeBatch(firestore).set(billDocRef, { items: newTableBill }, { merge: true }).commit();
+  };
+
+  const addUdhariToBill = async (udhariBill: UdhariBill) => {
+    if(!firestore) return;
+
+    const tableBillItems = bills[activeTable]?.items || [];
+    const newTableBill = [...tableBillItems];
+
+    udhariBill.items.forEach(udhariItem => {
+      const existingItem = newTableBill.find(i => i.id === udhariItem.id);
+      if (existingItem) {
+        existingItem.quantity += udhariItem.quantity;
+      } else {
+        newTableBill.push(udhariItem);
+      }
+    });
+    
+    const batch = writeBatch(firestore);
+    const billDocRef = doc(firestore, "bills", activeTable);
+    batch.set(billDocRef, { items: newTableBill }, { merge: true });
+
+    const udhariDocRef = doc(firestore, "udhariBills", udhariBill.id);
+    batch.update(udhariDocRef, { status: 'settled' });
+
+    await batch.commit();
+  };
+
+  const updateQuantity = async (itemId: number, quantity: number) => {
+    if (!firestore) return;
+    const tableBill = bills[activeTable]?.items || [];
+    const billDocRef = doc(firestore, "bills", activeTable);
+    
+    let newTableBill;
+    if (quantity <= 0) {
+      newTableBill = tableBill.filter((i) => i.id !== itemId);
+    } else {
+      newTableBill = tableBill.map((i) =>
+        i.id === itemId ? { ...i, quantity } : i
+      );
+    }
+    
+    if (newTableBill.length === 0) {
+       await deleteDoc(billDocRef);
+    } else {
+       await writeBatch(firestore).set(billDocRef, { items: newTableBill }, { merge: true }).commit();
+    }
+  };
+
+  const clearBill = async () => {
+     if(firestore && bills[activeTable]) {
+       await deleteDoc(doc(firestore, "bills", activeTable));
+     }
+  }
+
+  const saveToUdhari = async (udhariBill: Omit<UdhariBill, 'id' | 'date' | 'status'>) => {
+    if (!firestore) return;
+    await addDoc(collection(firestore, "udhariBills"), {
+        ...udhariBill,
+        date: serverTimestamp(),
+        status: 'active'
+    });
+    await clearBill();
+  }
+
+  const settleUdhari = async (udhariId: string) => {
+    if (!firestore) return;
+    const udhariDocRef = doc(firestore, "udhariBills", udhariId);
+    await updateDoc(udhariDocRef, { status: 'settled' });
   }
   
-  const updateUdhariNotes = (udhariId: string, notes: string) => {
-    setUdhariBills(prev => prev.map(bill => bill.id === udhariId ? { ...bill, notes } : bill));
+  const updateUdhariNotes = async (udhariId: string, notes: string) => {
+     if (!firestore) return;
+     const udhariDocRef = doc(firestore, "udhariBills", udhariId);
+     await updateDoc(udhariDocRef, { notes });
   };
 
-  const addNewNote = () => {
-    const newNote: Note = {
-      id: `NOTE-${Date.now()}`,
+  const addNewNote = async () => {
+    if (!firestore) return;
+    await addDoc(collection(firestore, "notes"), {
       content: "",
-      date: new Date().toISOString(),
-    };
-    setNotes(prev => [newNote, ...prev]);
+      date: serverTimestamp(),
+    });
   };
 
-  const updateNote = (noteId: string, content: string) => {
-    setNotes(prev => prev.map(note => note.id === noteId ? { ...note, content } : note));
+  const updateNote = async (noteId: string, content: string) => {
+    if (!firestore) return;
+    await updateDoc(doc(firestore, "notes", noteId), { content });
   };
 
-  const deleteNote = (noteId: string) => {
-    setNotes(prev => prev.filter(note => note.id !== noteId));
+  const deleteNote = async (noteId: string) => {
+     if (!firestore) return;
+     await deleteDoc(doc(firestore, "notes", noteId));
   };
 
 
-  const recordPayment = (settledBill: SettledBill) => {
-    setPaymentHistory(prev => [settledBill, ...prev]);
-    clearBill();
+  const recordPayment = async (settledBill: Omit<SettledBill, 'id' | 'date'>) => {
+    if (!firestore) return;
+    await addDoc(collection(firestore, "settledBills"), {
+      ...settledBill,
+      date: serverTimestamp()
+    });
+    await clearBill();
   }
 
-  const billedTables = Array.from(Object.keys(bills));
+  const billedTables = Object.keys(bills);
   
   if (!isLoaded) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
@@ -320,13 +269,13 @@ export default function Home() {
                   settledUdhariBills={settledUdhariBills}
                   onAddToBill={addUdhariToBill} 
                   activeTable={activeTable} 
-                  notes={notes}
+                  notes={notesData || []}
                   onAddNewNote={addNewNote}
                   onUpdateNote={updateNote}
                   onDeleteNote={deleteNote}
                   onUpdateUdhariNotes={updateUdhariNotes}
                />
-               <PaymentHistoryDialog paymentHistory={paymentHistory} udhariBills={udhariBills} />
+               <PaymentHistoryDialog paymentHistory={settledBillsData || []} udhariBills={udhariBills} />
             </div>
           </div>
         </div>
@@ -349,11 +298,11 @@ export default function Home() {
               onAddTable={handleAddTable}
               onDeleteTable={handleDeleteTable}
             />
-            <MenuSection onAddItem={addToBill} billItems={bills[activeTable] || []} />
+            <MenuSection onAddItem={addToBill} billItems={bills[activeTable]?.items || []} />
           </div>
           <div className="lg:col-span-2">
             <BillingSection
-              items={bills[activeTable] || []}
+              items={bills[activeTable]?.items || []}
               onUpdateQuantity={updateQuantity}
               onClearBill={clearBill}
               onSaveToUdhari={saveToUdhari}
@@ -373,4 +322,11 @@ export default function Home() {
   );
 }
 
-    
+
+export default function Home() {
+  return (
+    <FirebaseProvider>
+      <HomePage />
+    </FirebaseProvider>
+  );
+}

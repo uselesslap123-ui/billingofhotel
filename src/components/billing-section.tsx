@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +29,8 @@ interface BillingSectionProps {
   items: BillItem[];
   onUpdateQuantity: (itemId: number, quantity: number) => void;
   onClearBill: () => void;
-  onSaveToUdhari: (udhariBill: UdhariBill) => void;
-  onRecordPayment: (settledBill: SettledBill) => void;
+  onSaveToUdhari: (udhariBill: Omit<UdhariBill, 'id' | 'date' | 'status'>) => void;
+  onRecordPayment: (settledBill: Omit<SettledBill, 'id' | 'date'>) => void;
   activeTable: string;
 }
 
@@ -40,44 +40,7 @@ const PAYEE_NAME = "Hotel Sugaran";
 
 const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: string, totalAmount: number, onConfirmPayment: () => void }) => {
     const [isQrOpen, setIsQrOpen] = useState(false);
-    const [countdown, setCountdown] = useState(90);
-    const { toast } = useToast();
-    const timerRef = useRef<NodeJS.Timeout>();
-
-    useEffect(() => {
-        if (isQrOpen) {
-            setCountdown(90); 
-            timerRef.current = setInterval(() => {
-                setCountdown(prev => prev > 0 ? prev - 1 : 0);
-            }, 1000);
-        } else {
-            if (timerRef.current) {
-              clearInterval(timerRef.current);
-            }
-        }
-        return () => {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
-        }
-    }, [isQrOpen]);
-
-    useEffect(() => {
-        if (countdown === 0 && isQrOpen) {
-            setIsQrOpen(false);
-        }
-    }, [countdown, isQrOpen]);
-
-    useEffect(() => {
-        if (!isQrOpen && countdown === 0) {
-            toast({
-                title: "QR Code Expired",
-                description: "Please generate a new QR code to pay.",
-                variant: "destructive",
-            });
-        }
-    }, [isQrOpen, countdown, toast]);
-
+    
     return (
         <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
             <DialogTrigger asChild>
@@ -93,9 +56,6 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
                     </div>
                     <p className="mt-4 font-bold text-xl">Total: Rs.{totalAmount.toFixed(2)}</p>
                     <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
-                    <p className="text-sm font-bold text-destructive mt-4">
-                        QR code expires in {Math.floor(countdown / 60)}:{('0' + (countdown % 60)).slice(-2)}
-                    </p>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
@@ -142,11 +102,9 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   };
 
   const handlePayment = (method: 'Cash' | 'Online') => {
-    const settledBill: SettledBill = {
-      id: `SETTLED-${Date.now()}`,
+    const settledBill: Omit<SettledBill, 'id' | 'date'> = {
       items: items,
       totalAmount: totalAmount,
-      date: new Date().toISOString(),
       paymentMethod: method,
       table: activeTable
     };
@@ -229,12 +187,10 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       return;
     }
 
-    const udhariBill: UdhariBill = {
-      id: `UDHARI-${Date.now()}`,
+    const udhariBill: Omit<UdhariBill, 'id' | 'date' | 'status'> = {
       customerName: customerName.trim(),
       items: items,
       totalAmount: totalAmount,
-      date: new Date().toISOString(),
       notes: "",
     };
     onSaveToUdhari(udhariBill);
@@ -345,56 +301,58 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       <DialogTitle className="font-headline">Bill & Payment Options</DialogTitle>
                     </DialogHeader>
                     <div className="flex-grow overflow-y-auto pr-6 -mr-6">
-                      <div ref={billContentRef} id="bill-to-print-settle" className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
-                        <div className="text-center mb-6">
-                          <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
-                          <p className="text-sm text-gray-500">Official Bill Receipt</p>
-                        </div>
-                        <Separator className="my-4 border-dashed border-gray-400" />
-                        <div className="grid grid-cols-2 gap-x-4 text-xs mb-4">
-                          <div><strong>Bill No:</strong> <span className="font-mono">{billNumber}</span></div>
-                          <div className="text-right"><strong>Date:</strong> {billDate}</div>
-                          <div><strong>{isParcel ? 'Order:' : 'Table:'}</strong> {activeTable}</div>
-                          {customerName && <div className="text-right"><strong>Customer:</strong> {customerName}</div>}
-                        </div>
-                        <Separator className="my-4 border-dashed border-gray-400"/>
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b-2 border-gray-300">
-                              <th className="text-left py-2 font-semibold text-gray-600">Item</th>
-                              <th className="text-center py-2 font-semibold text-gray-600">Qty</th>
-                              <th className="text-right py-2 font-semibold text-gray-600">Price</th>
-                              <th className="text-right py-2 font-semibold text-gray-600">Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {items.map(item => (
-                              <tr key={item.id} className="border-b border-gray-200">
-                                <td className="py-2">{item.name}</td>
-                                <td className="text-center py-2">{item.quantity}</td>
-                                <td className="text-right py-2 font-mono">Rs.{item.price.toFixed(2)}</td>
-                                <td className="text-right py-2 font-mono">Rs.{(item.price * item.quantity).toFixed(2)}</td>
+                      <div id="bill-to-print-settle" className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
+                        <div ref={billContentRef}>
+                          <div className="text-center mb-6">
+                            <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
+                            <p className="text-sm text-gray-500">Official Bill Receipt</p>
+                          </div>
+                          <Separator className="my-4 border-dashed border-gray-400" />
+                          <div className="grid grid-cols-2 gap-x-4 text-xs mb-4">
+                            <div><strong>Bill No:</strong> <span className="font-mono">{billNumber}</span></div>
+                            <div className="text-right"><strong>Date:</strong> {billDate}</div>
+                            <div><strong>{isParcel ? 'Order:' : 'Table:'}</strong> {activeTable}</div>
+                            {customerName && <div className="text-right"><strong>Customer:</strong> {customerName}</div>}
+                          </div>
+                          <Separator className="my-4 border-dashed border-gray-400"/>
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b-2 border-gray-300">
+                                <th className="text-left py-2 font-semibold text-gray-600">Item</th>
+                                <th className="text-center py-2 font-semibold text-gray-600">Qty</th>
+                                <th className="text-right py-2 font-semibold text-gray-600">Price</th>
+                                <th className="text-right py-2 font-semibold text-gray-600">Amount</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        <div className="mt-4 text-sm space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Subtotal:</span>
-                            <span className="font-medium font-mono">Rs.{subtotal.toFixed(2)}</span>
+                            </thead>
+                            <tbody>
+                              {items.map(item => (
+                                <tr key={item.id} className="border-b border-gray-200">
+                                  <td className="py-2">{item.name}</td>
+                                  <td className="text-center py-2">{item.quantity}</td>
+                                  <td className="text-right py-2 font-mono">Rs.{item.price.toFixed(2)}</td>
+                                  <td className="text-right py-2 font-mono">Rs.{(item.price * item.quantity).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          <div className="mt-4 text-sm space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Subtotal:</span>
+                              <span className="font-medium font-mono">Rs.{subtotal.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                              <span className="font-medium font-mono">Rs.{gstAmount.toFixed(2)}</span>
+                            </div>
+                            <Separator className="my-2 border-dashed border-gray-400" />
+                            <div className="flex justify-between font-bold text-lg text-gray-800">
+                              <span>TOTAL:</span>
+                              <span className="font-mono">Rs.{totalAmount.toFixed(2)}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                            <span className="font-medium font-mono">Rs.{gstAmount.toFixed(2)}</span>
-                          </div>
-                          <Separator className="my-2 border-dashed border-gray-400" />
-                          <div className="flex justify-between font-bold text-lg text-gray-800">
-                            <span>TOTAL:</span>
-                            <span className="font-mono">Rs.{totalAmount.toFixed(2)}</span>
-                          </div>
+                          <Separator className="my-4 border-dashed border-gray-400" />
+                          <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                         </div>
-                        <Separator className="my-4 border-dashed border-gray-400" />
-                        <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                       </div>
                     </div>
                     <DialogFooter className="pt-4 flex-wrap items-center justify-center gap-2">
@@ -424,5 +382,3 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
-
-    

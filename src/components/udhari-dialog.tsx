@@ -45,6 +45,16 @@ interface UdhariDialogProps {
     onUpdateUdhariNotes: (udhariId: string, notes: string) => void;
 }
 
+const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    // Check if it's a Firebase Timestamp
+    if (date.toDate) {
+        return format(date.toDate(), "PPpp");
+    }
+    // Fallback for string or Date object
+    return format(new Date(date), "PPpp");
+};
+
 const UdhariBillNotepad = ({ bill, onSave }: { bill: UdhariBill, onSave: (notes: string) => void }) => {
     const [notes, setNotes] = useState(bill.notes || "");
     
@@ -73,7 +83,7 @@ const UdhariBillCard = ({ bill, onAddToBill, activeTable, onUpdateUdhariNotes }:
         <div className="flex justify-between items-start">
             <div>
                 <p className="font-bold text-lg">{bill.customerName}</p>
-                <p className="text-sm text-muted-foreground">{format(new Date(bill.date), "PPpp")}</p>
+                <p className="text-sm text-muted-foreground">{formatDate(bill.date)}</p>
             </div>
             <div className="text-right">
                 <p className="font-bold text-lg">Rs.{bill.totalAmount.toFixed(2)}</p>
@@ -138,7 +148,7 @@ const NoteEditor = ({ note, onUpdate, onDelete }: { note: Note, onUpdate: (conte
         <Card>
             <CardContent className="p-3">
                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-muted-foreground">{format(new Date(note.date), "PPpp")}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(note.date)}</p>
                     <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditing(true)} disabled={isEditing}>
                             <Edit className="h-4 w-4" />
