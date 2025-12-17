@@ -6,8 +6,8 @@ import type { SettledBill, UdhariBill, BillItem } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, X } from "lucide-react";
+import { format, isToday, isThisWeek, isThisMonth, startOfDay, isSameDay } from 'date-fns';
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, X, Calendar as CalendarIcon } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -26,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -110,6 +112,9 @@ type ItemSalesReport = {
 }
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
     const cashPayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Cash'), [paymentHistory]);
     const onlinePayments = useMemo(() => paymentHistory.filter(p => p.paymentMethod === 'Online'), [paymentHistory]);
     const historyTableRef = useRef<HTMLDivElement>(null);
@@ -143,6 +148,16 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const allTimeData = useMemo(() => {
         return calculateTotals(paymentHistory, udhariBills);
     }, [paymentHistory, udhariBills]);
+
+    const filteredPayments = useMemo(() => {
+        if (!selectedDate) return paymentHistory;
+        return paymentHistory.filter(bill => isSameDay(new Date(bill.date), selectedDate));
+    }, [paymentHistory, selectedDate]);
+
+    const filteredTotal = useMemo(() => {
+        return filteredPayments.reduce((acc, bill) => acc + bill.totalAmount, 0);
+    }, [filteredPayments]);
+
 
     const downloadCSV = () => {
         const summaries = [
@@ -200,7 +215,19 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                 const ratio = pdfWidth / canvasWidth;
                 const pdfHeight = canvasHeight * ratio;
                 
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                let position = 0;
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                let heightLeft = pdfHeight;
+    
+                heightLeft -= pdf.internal.pageSize.getHeight();
+    
+                while (heightLeft > 0) {
+                  position = heightLeft - pdfHeight;
+                  pdf.addPage();
+                  pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                  heightLeft -= pdf.internal.pageSize.getHeight();
+                }
+
                 pdf.save(`Hisab_Kitab_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
             });
         }
@@ -224,6 +251,24 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const mostSellingItems = useMemo(() => itemSalesReport.slice(0, 5), [itemSalesReport]);
     
     const totalUdhari = useMemo(() => udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0), [udhariBills]);
+
+    const { firstTransactionDate, paymentDays } = useMemo(() => {
+        const allTransactions = [...paymentHistory, ...udhariBills];
+        if (allTransactions.length === 0) {
+            return { firstTransactionDate: new Date(), paymentDays: [] };
+        }
+        const dates = allTransactions.map(t => new Date(t.date));
+        const firstDate = new Date(Math.min(...dates.map(d => d.getTime())));
+        
+        const uniquePaymentDays = [...new Set(paymentHistory.map(p => startOfDay(new Date(p.date)).getTime()))].map(t => new Date(t));
+
+        return { firstTransactionDate: firstDate, paymentDays: uniquePaymentDays };
+    }, [paymentHistory, udhariBills]);
+
+    const handleDateSelect = (date: Date | undefined) => {
+        setSelectedDate(date);
+        setIsCalendarOpen(false);
+    }
 
 
     return (
@@ -254,13 +299,24 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsList>
                         
                         <TabsContent value="all" className="mt-4">
-                            {paymentHistory.length === 0 ? (
+                             {selectedDate && (
+                                <Card className="mb-4 bg-primary/10">
+                                    <CardHeader className="flex-row items-center justify-between pb-2 pt-4">
+                                        <div>
+                                            <CardTitle>Showing payments for {format(selectedDate, 'PPP')}</CardTitle>
+                                            <CardDescription>Total Revenue: Rs.{filteredTotal.toFixed(2)}</CardDescription>
+                                        </div>
+                                        <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}><X className="mr-2 h-4 w-4" />Clear Filter</Button>
+                                    </CardHeader>
+                                </Card>
+                            )}
+                            {filteredPayments.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-10">
-                                    No payments recorded yet.
+                                    {selectedDate ? `No payments found for ${format(selectedDate, 'PPP')}.` : 'No payments recorded yet.'}
                                 </p>
                             ) : (
                                 <div className="space-y-4">
-                                    {paymentHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
+                                    {filteredPayments.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
                                 </div>
                             )}
                         </TabsContent>
@@ -356,7 +412,25 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsContent>
                     </Tabs>
                 </ScrollArea>
-                <div className="mt-4 pt-4 border-t flex justify-end gap-2">
+                <div className="mt-4 pt-4 border-t flex justify-end gap-2 flex-wrap">
+                     <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline"><CalendarIcon className="mr-2 h-4 w-4"/>Calendar</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={handleDateSelect}
+                                fromDate={firstTransactionDate}
+                                toDate={new Date()}
+                                modifiers={{ paymentDay: paymentDays }}
+                                modifiersClassNames={{ paymentDay: 'day-paymentDay' }}
+                                initialFocus
+                                numberOfMonths={1}
+                            />
+                        </PopoverContent>
+                    </Popover>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive" className="bg-red-500/15 text-red-500 border border-red-500/30 hover:bg-red-500/25 hover:text-red-600">
