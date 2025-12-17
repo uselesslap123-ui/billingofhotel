@@ -73,7 +73,7 @@
     @apply bg-background text-foreground;
   }
   .day-paymentDay {
-    @apply font-bold text-primary bg-primary/10;
+    @apply font-bold text-primary bg-primary/10 border-primary/50;
   }
 }
 

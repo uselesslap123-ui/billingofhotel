@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useRef } from "react";
@@ -380,7 +379,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                                 toDate={new Date()}
                                 numberOfMonths={1}
                                 modifiers={{ paymentDay: paymentDays }}
-                                modifiersStyles={{ paymentDay: { border: "2px solid var(--primary-foreground)" } }}
+                                modifiersClassNames={{ paymentDay: 'day-paymentDay' }}
                             />
                         </PopoverContent>
                     </Popover>
@@ -407,7 +406,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                 </div>
 
                 {/* Hidden content for PDF generation */}
-                <div className="absolute top-0 left-0 -z-10 opacity-0 h-0 w-0 overflow-hidden" >
+                <div className="opacity-0 absolute -z-10 top-0 left-0 h-0 w-0 overflow-hidden" >
                     <div ref={historyTableRef} className="p-8 bg-white text-black font-sans w-[1000px]">
                         <h2 className="text-3xl font-bold text-center mb-6">Hisab-Kitab Report</h2>
                         <p className="text-center text-sm text-gray-500 mb-8">Generated on: {format(new Date(), "PPpp")}</p>
@@ -512,5 +511,3 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </Dialog>
     );
 }
-
-    
