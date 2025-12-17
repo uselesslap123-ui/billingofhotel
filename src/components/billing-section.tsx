@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { QRCode } from "react-qrcode-logo";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface BillingSectionProps {
   items: BillItem[];
@@ -114,6 +115,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const billContentRef = useRef<HTMLDivElement>(null);
   const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [shake, setShake] = useState(false);
 
   const subtotal = useMemo(() => {
     return items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -222,6 +224,8 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
         description: "Please enter a customer name for the Udhari bill.",
         variant: "destructive",
       });
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
       return;
     }
 
@@ -257,7 +261,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
               placeholder="Customer Name (for Udhari/Invoice)"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="text-base sm:text-sm"
+              className={cn("text-base sm:text-sm", shake && 'animate-shake')}
             />
 
             <ScrollArea className="h-64 pr-4">
@@ -341,7 +345,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       <DialogTitle className="font-headline">Bill & Payment Options</DialogTitle>
                     </DialogHeader>
                     <div className="flex-grow overflow-y-auto pr-6 -mr-6">
-                      <div ref={billContentRef} className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
+                      <div ref={billContentRef} id="bill-to-print-settle" className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
                         <div className="text-center mb-6">
                           <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
                           <p className="text-sm text-gray-500">Official Bill Receipt</p>
@@ -417,62 +421,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
           </div>
         </CardContent>
       </Card>
-      {/* Hidden content for printing */}
-      <div className="opacity-0 absolute -z-10 top-0 left-0 h-0 w-0 overflow-hidden">
-        <div id="bill-to-print-settle" className="p-6 bg-white text-black font-sans">
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
-            <p className="text-sm text-gray-500">Official Bill Receipt</p>
-          </div>
-          <Separator className="my-4 border-dashed border-gray-400" />
-          <div className="grid grid-cols-2 gap-x-4 text-xs mb-4">
-            <div><strong>Bill No:</strong> <span className="font-mono">{billNumber}</span></div>
-            <div className="text-right"><strong>Date:</strong> {billDate}</div>
-            <div><strong>{activeTable === 'Parcel' ? 'Order:' : 'Table:'}</strong> {activeTable}</div>
-            {customerName && <div className="text-right"><strong>Customer:</strong> {customerName}</div>}
-          </div>
-          <Separator className="my-4 border-dashed border-gray-400"/>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b-2 border-gray-300">
-                <th className="text-left py-2 font-semibold text-gray-600">Item</th>
-                <th className="text-center py-2 font-semibold text-gray-600">Qty</th>
-                <th className="text-right py-2 font-semibold text-gray-600">Price</th>
-                <th className="text-right py-2 font-semibold text-gray-600">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(item => (
-                <tr key={item.id} className="border-b border-gray-200">
-                  <td className="py-2">{item.name}</td>
-                  <td className="text-center py-2">{item.quantity}</td>
-                  <td className="text-right py-2 font-mono">Rs.{item.price.toFixed(2)}</td>
-                  <td className="text-right py-2 font-mono">Rs.{(item.price * item.quantity).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-4 text-sm space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium font-mono">Rs.{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-              <span className="font-medium font-mono">Rs.{gstAmount.toFixed(2)}</span>
-            </div>
-            <Separator className="my-2 border-dashed border-gray-400" />
-            <div className="flex justify-between font-bold text-lg text-gray-800">
-              <span>TOTAL:</span>
-              <span className="font-mono">Rs.{totalAmount.toFixed(2)}</span>
-            </div>
-          </div>
-          <Separator className="my-4 border-dashed border-gray-400" />
-          <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
-        </div>
-      </div>
     </>
   );
 }
-
-    
