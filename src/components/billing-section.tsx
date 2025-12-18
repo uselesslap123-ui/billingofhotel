@@ -126,22 +126,26 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / canvasHeight;
-        const imgHeight = pdfWidth / ratio;
-        let heightLeft = imgHeight;
-        let position = 0;
-  
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdf.internal.pageSize.getHeight();
-  
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-          heightLeft -= pdf.internal.pageSize.getHeight();
+        
+        // Calculate the image height to maintain aspect ratio
+        let imgWidth = pdfWidth - 20; // 10mm margin on each side
+        let imgHeight = imgWidth / ratio;
+        
+        // If the image height is greater than the page height, scale it down
+        if (imgHeight > pdfHeight - 20) {
+            imgHeight = pdfHeight - 20;
+            imgWidth = imgHeight * ratio;
         }
+
+        // Center the image on the page
+        const x = (pdfWidth - imgWidth) / 2;
+        const y = (pdfHeight - imgHeight) / 2;
+  
+        pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
         
         const namePart = customerName.trim().replace(/\s+/g, '_') || 'bill';
         const datePart = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
@@ -304,57 +308,84 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                       <DialogTitle className="font-headline">Bill & Payment Options</DialogTitle>
                     </DialogHeader>
                     <div className="flex-grow overflow-y-auto pr-6 -mr-6">
-                      <div id="bill-to-print-settle" className="p-4 sm:p-6 bg-white text-black rounded-lg font-sans">
-                        <div ref={billContentRef}>
-                          <div className="text-center mb-6">
-                            <h3 className="text-2xl font-bold font-headline text-gray-800">हॉटेल सुग्ररण</h3>
-                            <p className="text-sm text-gray-500">Official Bill Receipt</p>
-                          </div>
-                          <Separator className="my-4 border-dashed border-gray-400" />
-                          <div className="grid grid-cols-2 gap-x-4 text-xs mb-4">
-                            <div><strong>Bill No:</strong> <span className="font-mono">{billNumber}</span></div>
-                            <div className="text-right"><strong>Date:</strong> {billDate}</div>
-                            <div><strong>{isParcel ? 'Order:' : 'Table:'}</strong> {activeTable}</div>
-                            {customerName && <div className="text-right"><strong>Customer:</strong> {customerName}</div>}
-                          </div>
-                          <Separator className="my-4 border-dashed border-gray-400"/>
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b-2 border-gray-300">
-                                <th className="text-left py-2 font-semibold text-gray-600">Item</th>
-                                <th className="text-center py-2 font-semibold text-gray-600">Qty</th>
-                                <th className="text-right py-2 font-semibold text-gray-600">Price</th>
-                                <th className="text-right py-2 font-semibold text-gray-600">Amount</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {items.map(item => (
-                                <tr key={item.id} className="border-b border-gray-200">
-                                  <td className="py-2">{item.name}</td>
-                                  <td className="text-center py-2">{item.quantity}</td>
-                                  <td className="text-right py-2 font-mono">Rs.{item.price.toFixed(2)}</td>
-                                  <td className="text-right py-2 font-mono">Rs.{(item.price * item.quantity).toFixed(2)}</td>
+                      <div id="bill-to-print-settle" className="font-sans">
+                        <div ref={billContentRef} className="p-6 bg-white text-black text-sm">
+                           <div className="border-2 border-black p-4">
+                            <div className="text-center mb-4">
+                              <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                              <p className="text-xs">Veg-Non-Veg</p>
+                              <p className="text-xs">At Post Diveagar, Tal-Shrivardhan, Dist-Raigad</p>
+                              <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
+                            </div>
+                            
+                            <Separator className="my-3 border-dashed border-black" />
+
+                            <div className="flex justify-between text-xs mb-3">
+                              <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
+                              <div><strong>Date:</strong> {billDate}</div>
+                            </div>
+                            <div className="flex justify-between text-xs mb-3">
+                              <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
+                              {customerName && <div><strong>Customer:</strong> {customerName}</div>}
+                            </div>
+                            
+                            <Separator className="my-3 border-dashed border-black"/>
+                            
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b-2 border-black">
+                                  <th className="text-left py-1 font-bold">Item</th>
+                                  <th className="text-center py-1 font-bold">Qty</th>
+                                  <th className="text-right py-1 font-bold">Price</th>
+                                  <th className="text-right py-1 font-bold">Amount</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                          <div className="mt-4 text-sm space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Subtotal:</span>
-                              <span className="font-medium font-mono">Rs.{subtotal.toFixed(2)}</span>
+                              </thead>
+                              <tbody>
+                                {items.map(item => (
+                                  <tr key={item.id} className="border-b border-gray-300">
+                                    <td className="py-1">{item.name}</td>
+                                    <td className="text-center py-1">{item.quantity}</td>
+                                    <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
+                                    <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            
+                            <div className="mt-4 text-sm space-y-1">
+                              <div className="flex justify-end">
+                                <div className="w-1/2">
+                                  <div className="flex justify-between">
+                                    <span className="text-black">Subtotal:</span>
+                                    <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                                    <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                                  </div>
+                                  <Separator className="my-1 border-dashed border-black" />
+                                  <div className="flex justify-between font-bold text-base text-black">
+                                    <span>TOTAL:</span>
+                                    <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                              <span className="font-medium font-mono">Rs.{gstAmount.toFixed(2)}</span>
+
+                            <div className="flex justify-between items-end mt-8 text-xs">
+                                <div>
+                                    <p>Payment Mode: {isSettleDialogOpen ? '________________' : ''}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p>_________________________</p>
+                                    <p>(Authorized Signature)</p>
+                                </div>
                             </div>
-                            <Separator className="my-2 border-dashed border-gray-400" />
-                            <div className="flex justify-between font-bold text-lg text-gray-800">
-                              <span>TOTAL:</span>
-                              <span className="font-mono">Rs.{totalAmount.toFixed(2)}</span>
-                            </div>
+                            
+                            <p className="text-center text-xs text-gray-700 mt-6">
+                              पुन्हा भेट द्या! (Visit Again!)
+                            </p>
                           </div>
-                          <Separator className="my-4 border-dashed border-gray-400" />
-                          <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                         </div>
                       </div>
                     </div>
