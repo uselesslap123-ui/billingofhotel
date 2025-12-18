@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import type { SettledBill, UdhariBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, Calendar as CalendarIcon, X } from "lucide-react";
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, X } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -26,12 +26,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "./ui/table";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 
 interface PaymentHistoryDialogProps {
@@ -117,11 +117,15 @@ type ItemSalesReport = {
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-    const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+    const reportRef = useRef<HTMLDivElement>(null);
     
     const sortedHistory = useMemo(() => {
         return [...paymentHistory].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [paymentHistory]);
+
+    const activeUdhariBills = useMemo(() => udhariBills.filter(b => b.status === 'active'), [udhariBills]);
+    const settledUdhariBills = useMemo(() => udhariBills.filter(b => b.status === 'settled'), [udhariBills]);
+
     
     const filteredHistory = useMemo(() => {
         if (!selectedDate) return sortedHistory;
@@ -134,19 +138,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     }, [filteredHistory, selectedDate]);
 
 
-    const firstTransactionDate = useMemo(() => {
-        if (paymentHistory.length === 0) return new Date();
-        return new Date(Math.min(...paymentHistory.map(p => new Date(p.date).getTime())));
-    }, [paymentHistory]);
-
-     const paymentDays = useMemo(() => {
-        const daysWithPayments = new Set<string>();
-        paymentHistory.forEach(p => {
-            daysWithPayments.add(format(new Date(p.date), 'yyyy-MM-dd'));
-        });
-        return Array.from(daysWithPayments).map(dayStr => new Date(dayStr));
-    }, [paymentHistory]);
-
     const calculateTotals = (payments: SettledBill[], udharis: UdhariBill[]) => {
         return {
             cash: payments.filter(p => p.paymentMethod === 'Cash').reduce((acc, bill) => acc + bill.totalAmount, 0),
@@ -157,69 +148,43 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     
     const dailyData = useMemo(() => {
         const dailyPayments = paymentHistory.filter(p => p.date && isToday(new Date(p.date)));
-        const dailyUdharis = udhariBills.filter(u => u.date && isToday(new Date(u.date)));
+        const dailyUdharis = activeUdhariBills.filter(u => u.date && isToday(new Date(u.date)));
         return calculateTotals(dailyPayments, dailyUdharis);
-    }, [paymentHistory, udhariBills]);
+    }, [paymentHistory, activeUdhariBills]);
 
     const weeklyData = useMemo(() => {
         const weeklyPayments = paymentHistory.filter(p => p.date && isThisWeek(new Date(p.date), { weekStartsOn: 1 }));
-        const weeklyUdharis = udhariBills.filter(u => u.date && isThisWeek(new Date(u.date), { weekStartsOn: 1 }));
+        const weeklyUdharis = activeUdhariBills.filter(u => u.date && isThisWeek(new Date(u.date), { weekStartsOn: 1 }));
         return calculateTotals(weeklyPayments, weeklyUdharis);
-    }, [paymentHistory, udhariBills]);
+    }, [paymentHistory, activeUdhariBills]);
 
     const monthlyData = useMemo(() => {
         const monthlyPayments = paymentHistory.filter(p => p.date && isThisMonth(new Date(p.date)));
-        const monthlyUdharis = udhariBills.filter(u => u.date && isThisMonth(new Date(u.date)));
+        const monthlyUdharis = activeUdhariBills.filter(u => u.date && isThisMonth(new Date(u.date)));
         return calculateTotals(monthlyPayments, monthlyUdharis);
-    }, [paymentHistory, udhariBills]);
+    }, [paymentHistory, activeUdhariBills]);
     
     const allTimeData = useMemo(() => {
-        return calculateTotals(paymentHistory, udhariBills);
-    }, [paymentHistory, udhariBills]);
+        return calculateTotals(paymentHistory, activeUdhariBills);
+    }, [paymentHistory, activeUdhariBills]);
 
 
     const downloadHisabKitab = () => {
-        const summaries = [
-            ["", "Total Income", "Cash", "Online", "Udhari Given"],
-            ["Today's Summary", (dailyData.cash + dailyData.online).toFixed(2), dailyData.cash.toFixed(2), dailyData.online.toFixed(2), dailyData.udhari.toFixed(2)],
-            ["This Week's Summary", (weeklyData.cash + weeklyData.online).toFixed(2), weeklyData.cash.toFixed(2), weeklyData.online.toFixed(2), weeklyData.udhari.toFixed(2)],
-            ["This Month's Summary", (monthlyData.cash + monthlyData.online).toFixed(2), monthlyData.cash.toFixed(2), monthlyData.online.toFixed(2), monthlyData.udhari.toFixed(2)],
-            ["All Time Summary", (allTimeData.cash + allTimeData.online).toFixed(2), allTimeData.cash.toFixed(2), allTimeData.online.toFixed(2), allTimeData.udhari.toFixed(2)],
-        ];
-        
-        const settledBillsHeaders = ["Type", "ID", "Date", "Table/Customer", "Total Amount", "Payment Method", "Items"];
-        const settledBillsRows = paymentHistory.map(bill => [
-            "Settled Bill",
-            bill.id,
-            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
-            bill.table,
-            bill.totalAmount.toFixed(2),
-            bill.paymentMethod,
-            `"${bill.items.map(i => `${i.name} (x${i.quantity})`).join(", ")}"`
-        ]);
-
-        const udhariBillsRows = udhariBills.map(bill => [
-            "Udhari Bill",
-            bill.id,
-            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
-            bill.customerName,
-            bill.totalAmount.toFixed(2),
-            "Udhari",
-            `"${bill.items.map(i => `${i.name} (x${i.quantity})`).join(", ")}"`
-        ]);
-
-        const csvContent = "data:text/csv;charset=utf-8," 
-            + "Summary\n"
-            + summaries.map(e => e.join(",")).join("\n") + "\n\n"
-            + "All Transactions\n"
-            + [settledBillsHeaders.join(","), ...settledBillsRows.map(e => e.join(",")), ...udhariBillsRows.map(e => e.join(","))].join("\n");
-
-        const link = document.createElement("a");
-        link.setAttribute("href", encodeURI(csvContent));
-        link.setAttribute("download", `Hisab_Kitab_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const input = reportRef.current;
+        if (input) {
+            html2canvas(input, { scale: 2, useCORS: true, logging: true }).then((canvas) => {
+                const imgData = canvas.toDataURL("image/png");
+                const pdf = new jsPDF("p", "mm", "a4");
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                const imgHeight = pdfWidth / ratio;
+                
+                pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeight);
+                pdf.save(`Hisab_Kitab_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+            });
+        }
     }
 
 
@@ -242,8 +207,17 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const cashPayments = useMemo(() => sortedHistory.filter(p => p.paymentMethod === 'Cash'), [sortedHistory]);
     const onlinePayments = useMemo(() => sortedHistory.filter(p => p.paymentMethod === 'Online'), [sortedHistory]);
 
+    const totalSettledUdhari = useMemo(() => settledUdhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0), [settledUdhariBills]);
+    const totalUdhari = useMemo(() => activeUdhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0), [activeUdhariBills]);
+
 
     return (
+        <>
+        <div className="fixed -left-[9999px] top-0" aria-hidden>
+             <div ref={reportRef} className="w-[800px] bg-white p-8">
+                {/* This is a dummy div for PDF generation content. It will be populated later */}
+             </div>
+        </div>
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="outline">
@@ -385,28 +359,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     </Tabs>
                 </ScrollArea>
                 <div className="mt-4 pt-4 border-t flex justify-end items-center gap-2">
-                     <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline">
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                Calendar
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={setSelectedDate}
-                                month={calendarMonth}
-                                onMonthChange={setCalendarMonth}
-                                fromDate={firstTransactionDate}
-                                toDate={new Date()}
-                                modifiers={{ paymentDay: paymentDays }}
-                                modifiersClassNames={{ paymentDay: 'day-paymentDay' }}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive" className="bg-red-500/15 text-red-500 border border-red-500/30 hover:bg-red-500/25 hover:text-red-600">
@@ -417,24 +369,20 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Download Hisab-Kitab</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will download a CSV file of your complete payment history, including sales summaries and all active udhari bills.
+                                    This will download a PDF file of your complete payment history, including sales summaries and all active udhari bills.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={downloadHisabKitab}>Download CSV (Excel)</AlertDialogAction>
+                                <AlertDialogAction onClick={downloadHisabKitab}>Download PDF</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
                 </div>
             </DialogContent>
         </Dialog>
+        </>
     );
 }
-
-
-
-
-    
 
     
