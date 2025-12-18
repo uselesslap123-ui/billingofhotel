@@ -6,7 +6,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, Timer } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { QRCode } from "react-qrcode-logo";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Progress } from "./ui/progress";
 
 interface BillingSectionProps {
   items: BillItem[];
@@ -37,17 +38,58 @@ interface BillingSectionProps {
 const GST_RATE = 0.05; // 5%
 const UPI_ID = "8530378745@axl";
 const PAYEE_NAME = "Hotel Sugaran";
+const PAYMENT_TIMEOUT = 90; // 90 seconds
 
 const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: string, totalAmount: number, onConfirmPayment: () => void }) => {
     const [isQrOpen, setIsQrOpen] = useState(false);
+    const [countdown, setCountdown] = useState(PAYMENT_TIMEOUT);
+    const { toast } = useToast();
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+    useEffect(() => {
+        if (isQrOpen) {
+            setCountdown(PAYMENT_TIMEOUT);
+            timerRef.current = setInterval(() => {
+                setCountdown(prev => prev - 1);
+            }, 1000);
+        } else {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        }
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, [isQrOpen]);
+
+    useEffect(() => {
+        if (countdown <= 0) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setIsQrOpen(false);
+            toast({
+                variant: "destructive",
+                title: "Payment Timed Out",
+                description: "The QR code expired. Please try again.",
+            });
+        }
+    }, [countdown, toast]);
+    
     const handlePaymentConfirm = () => {
         setIsQrOpen(false);
         onConfirmPayment();
     }
+    
+    const handleOpenChange = (open: boolean) => {
+      setIsQrOpen(open);
+    }
+    
+    const progress = (countdown / PAYMENT_TIMEOUT) * 100;
 
     return (
-        <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+        <Dialog open={isQrOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
             </DialogTrigger>
@@ -61,6 +103,12 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
                     </div>
                     <p className="mt-4 font-bold text-xl">Total: Rs.{totalAmount.toFixed(2)}</p>
                     <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
+                </div>
+                 <div className="px-4 space-y-2">
+                    <Progress value={progress} className="h-2" />
+                    <p className="text-center text-sm text-muted-foreground">
+                        Time remaining: {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+                    </p>
                 </div>
                 <DialogFooter>
                     <Button className="w-full" onClick={handlePaymentConfirm}>Confirm Payment</Button>
@@ -122,26 +170,40 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const handleDownloadPdf = () => {
     const input = billContentRef.current;
     if (input) {
+      // Ensure the element is visible for html2canvas to capture it correctly
+      input.style.position = 'fixed';
+      input.style.left = '0';
+      input.style.top = '0';
+      input.style.zIndex = '9999';
+      input.style.background = 'white'; // Explicitly set background
+      
       html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
+        // Hide the element again after capture
+        if(billContentRef.current) {
+            billContentRef.current.style.position = '';
+            billContentRef.current.style.left = '';
+            billContentRef.current.style.top = '';
+            billContentRef.current.style.zIndex = '';
+            billContentRef.current.style.background = '';
+        }
+
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
+        
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / canvasHeight;
-        
-        // Calculate the image height to maintain aspect ratio
-        let imgWidth = pdfWidth - 20; // 10mm margin on each side
+
+        let imgWidth = pdfWidth - 20; // 10mm margin
         let imgHeight = imgWidth / ratio;
         
-        // If the image height is greater than the page height, scale it down
         if (imgHeight > pdfHeight - 20) {
-            imgHeight = pdfHeight - 20;
+            imgHeight = pdfHeight - 20; // 10mm margin
             imgWidth = imgHeight * ratio;
         }
 
-        // Center the image on the page
         const x = (pdfWidth - imgWidth) / 2;
         const y = (pdfHeight - imgHeight) / 2;
   
@@ -212,6 +274,86 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   
   return (
     <>
+      {/* Hidden div for PDF generation */}
+      <div className="absolute -left-[9999px] top-0 w-[800px]">
+          <div id="bill-to-print-settle" className="font-sans">
+              <div ref={billContentRef} className="p-6 bg-white text-black text-sm">
+                  <div className="border-2 border-black p-4">
+                      <div className="text-center mb-4">
+                          <h3 className="text-2xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                          <p className="text-xs">Veg-Non-Veg</p>
+                          <p className="text-sm font-bold mt-2">Official Bill Receipt</p>
+                      </div>
+                      
+                      <Separator className="my-3 border-dashed border-black" />
+
+                      <div className="flex justify-between text-xs mb-3">
+                          <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
+                          <div><strong>Date:</strong> {billDate}</div>
+                      </div>
+                      <div className="flex justify-between text-xs mb-3">
+                          <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
+                          {customerName && <div><strong>Customer:</strong> {customerName}</div>}
+                      </div>
+                      
+                      <Separator className="my-3 border-dashed border-black"/>
+                      
+                      <table className="w-full text-sm">
+                          <thead>
+                              <tr className="border-b-2 border-black">
+                                  <th className="text-left py-1 font-bold w-1/2">Item</th>
+                                  <th className="text-center py-1 font-bold">Qty</th>
+                                  <th className="text-right py-1 font-bold">Price</th>
+                                  <th className="text-right py-1 font-bold">Amount</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {items.map(item => (
+                                  <tr key={item.id} className="border-b border-gray-300">
+                                      <td className="py-1">{item.name}</td>
+                                      <td className="text-center py-1">{item.quantity}</td>
+                                      <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
+                                      <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                      
+                      <div className="mt-4 text-sm flex justify-end">
+                          <div className="w-1/2 space-y-1">
+                              <div className="flex justify-between">
+                                  <span className="text-black">Subtotal:</span>
+                                  <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                  <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                                  <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                              </div>
+                              <Separator className="my-1 border-dashed border-black" />
+                              <div className="flex justify-between font-bold text-base text-black">
+                                  <span>TOTAL:</span>
+                                  <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div className="flex justify-between items-end mt-12 text-xs">
+                          <div>
+                              <p>Payment Mode: ________________</p>
+                          </div>
+                          <div className="text-center">
+                              <p className="border-t border-black px-8 pt-1">Authorized Signature</p>
+                          </div>
+                      </div>
+                      
+                      <p className="text-center text-xs text-gray-700 mt-8">
+                          Thank you for your visit!
+                      </p>
+                  </div>
+              </div>
+          </div>
+      </div>
+      
       <Card className="sticky top-20 shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline text-xl flex justify-between items-center">
@@ -305,12 +447,10 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                 {billNumber && (
                   <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
                     <DialogHeader>
-                      <DialogTitle className="font-headline">Bill & Payment Options</DialogTitle>
+                      <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                     </DialogHeader>
                     <div className="flex-grow overflow-y-auto pr-6 -mr-6">
-                      <div id="bill-to-print-settle" className="font-sans">
-                        <div ref={billContentRef} className="p-6 bg-white text-black text-sm">
-                           <div className="border-2 border-black p-4">
+                       <div className="p-6 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
                             <div className="text-center mb-4">
                               <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
                               <p className="text-xs">Veg-Non-Veg</p>
@@ -370,23 +510,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                                 </div>
                               </div>
                             </div>
-
-                            <div className="flex justify-between items-end mt-8 text-xs">
-                                <div>
-                                    <p>Payment Mode: {isSettleDialogOpen ? '________________' : ''}</p>
-                                </div>
-                                <div className="text-center">
-                                    <p>_________________________</p>
-                                    <p>(Authorized Signature)</p>
-                                </div>
-                            </div>
-                            
-                            <p className="text-center text-xs text-gray-700 mt-6">
-                              Thank you for your visit!
-                            </p>
                           </div>
-                        </div>
-                      </div>
                     </div>
                     <DialogFooter className="pt-4 flex-wrap items-center justify-center gap-2">
                        <div className="flex gap-2 justify-center flex-wrap">
@@ -415,3 +539,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
+
+    
