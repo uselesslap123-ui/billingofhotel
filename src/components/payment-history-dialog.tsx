@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { format, isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { History, Landmark, CreditCard, TrendingUp, BarChart, Download } from "lucide-react";
+import { History, Landmark, CreditCard, TrendingUp, BarChart, Download, Calendar as CalendarIcon, X } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -26,12 +26,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "./ui/table";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { ReportLayout } from "./report-layout";
 
 
 interface PaymentHistoryDialogProps {
@@ -39,8 +42,9 @@ interface PaymentHistoryDialogProps {
     udhariBills: UdhariBill[];
 }
 
-const formatDate = (dateString: string, formatString: string) => {
-    return format(new Date(dateString), formatString);
+const formatDate = (dateString: string | Date, formatString: string) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return format(date, formatString);
 }
 
 
@@ -116,8 +120,37 @@ type ItemSalesReport = {
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
     const historyTableRef = useRef<HTMLDivElement>(null);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+    const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+    
     const sortedHistory = useMemo(() => {
         return [...paymentHistory].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [paymentHistory]);
+    
+    const filteredHistory = useMemo(() => {
+        if (!selectedDate) return sortedHistory;
+        return sortedHistory.filter(bill => format(new Date(bill.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'));
+    }, [sortedHistory, selectedDate]);
+    
+    const selectedDateTotal = useMemo(() => {
+        if(!selectedDate) return 0;
+        return filteredHistory.reduce((acc, bill) => acc + bill.totalAmount, 0);
+    }, [filteredHistory, selectedDate]);
+
+
+    const firstTransactionDate = useMemo(() => {
+        if (paymentHistory.length === 0) return new Date();
+        return new Date(Math.min(...paymentHistory.map(p => new Date(p.date).getTime())));
+    }, [paymentHistory]);
+
+     const paymentDays = useMemo(() => {
+        const daysWithPayments = new Set<string>();
+        paymentHistory.forEach(p => {
+             if (p.date) {
+                daysWithPayments.add(format(new Date(p.date), 'yyyy-MM-dd'));
+            }
+        });
+        return Array.from(daysWithPayments).map(dayStr => new Date(dayStr));
     }, [paymentHistory]);
 
     const calculateTotals = (payments: SettledBill[], udharis: UdhariBill[]) => {
@@ -129,20 +162,20 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     }
     
     const dailyData = useMemo(() => {
-        const dailyPayments = paymentHistory.filter(p => isToday(new Date(p.date)));
-        const dailyUdharis = udhariBills.filter(u => isToday(new Date(u.date)));
+        const dailyPayments = paymentHistory.filter(p => p.date && isToday(new Date(p.date)));
+        const dailyUdharis = udhariBills.filter(u => u.date && isToday(new Date(u.date)));
         return calculateTotals(dailyPayments, dailyUdharis);
     }, [paymentHistory, udhariBills]);
 
     const weeklyData = useMemo(() => {
-        const weeklyPayments = paymentHistory.filter(p => isThisWeek(new Date(p.date), { weekStartsOn: 1 }));
-        const weeklyUdharis = udhariBills.filter(u => isThisWeek(new Date(u.date), { weekStartsOn: 1 }));
+        const weeklyPayments = paymentHistory.filter(p => p.date && isThisWeek(new Date(p.date), { weekStartsOn: 1 }));
+        const weeklyUdharis = udhariBills.filter(u => u.date && isThisWeek(new Date(u.date), { weekStartsOn: 1 }));
         return calculateTotals(weeklyPayments, weeklyUdharis);
     }, [paymentHistory, udhariBills]);
 
     const monthlyData = useMemo(() => {
-        const monthlyPayments = paymentHistory.filter(p => isThisMonth(new Date(p.date)));
-        const monthlyUdharis = udhariBills.filter(u => isThisMonth(new Date(u.date)));
+        const monthlyPayments = paymentHistory.filter(p => p.date && isThisMonth(new Date(p.date)));
+        const monthlyUdharis = udhariBills.filter(u => u.date && isThisMonth(new Date(u.date)));
         return calculateTotals(monthlyPayments, monthlyUdharis);
     }, [paymentHistory, udhariBills]);
     
@@ -164,7 +197,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const settledBillsRows = paymentHistory.map(bill => [
             "Settled Bill",
             bill.id,
-            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
+            bill.date ? format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss") : '',
             bill.table,
             bill.totalAmount.toFixed(2),
             bill.paymentMethod,
@@ -174,7 +207,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const udhariBillsRows = udhariBills.map(bill => [
             "Udhari Bill",
             bill.id,
-            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
+            bill.date ? format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss") : '',
             bill.customerName,
             bill.totalAmount.toFixed(2),
             "Udhari",
@@ -276,11 +309,24 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsList>
                         
                         <TabsContent value="all" className="mt-4">
-                            {sortedHistory.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-10">No payments recorded yet.</p>
+                             {selectedDate && (
+                                <div className="flex items-center justify-between bg-primary/10 p-3 rounded-lg mb-4">
+                                    <div>
+                                        <p className="font-bold">Showing payments for {formatDate(selectedDate, "PPP")}</p>
+                                        <p className="text-sm font-bold text-primary">Total Revenue: Rs.{selectedDateTotal.toFixed(2)}</p>
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => setSelectedDate(undefined)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            {filteredHistory.length === 0 ? (
+                                <p className="text-center text-muted-foreground py-10">
+                                    {selectedDate ? `No payments recorded on ${formatDate(selectedDate, "PPP")}.` : "No payments recorded yet."}
+                                </p>
                             ) : (
                                 <div className="space-y-4">
-                                    {sortedHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
+                                    {filteredHistory.map(bill => <SettledBillCard key={bill.id} bill={bill} />)}
                                 </div>
                             )}
                         </TabsContent>
@@ -376,7 +422,29 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                         </TabsContent>
                     </Tabs>
                 </ScrollArea>
-                <div className="mt-4 pt-4 border-t flex justify-end">
+                <div className="mt-4 pt-4 border-t flex justify-end items-center gap-2">
+                     <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline">
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                Calendar
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                month={calendarMonth}
+                                onMonthChange={setCalendarMonth}
+                                fromDate={firstTransactionDate}
+                                toDate={new Date()}
+                                modifiers={{ paymentDay: paymentDays }}
+                                modifiersClassNames={{ paymentDay: 'day-paymentDay' }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive" className="bg-red-500/15 text-red-500 border border-red-500/30 hover:bg-red-500/25 hover:text-red-600">
@@ -400,104 +468,114 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                 </div>
 
                 <div className="opacity-0 absolute -z-50 top-0 left-0 h-0 w-0 overflow-hidden" >
-                    <div ref={historyTableRef} className="p-8 bg-white text-black font-sans w-[1000px]">
-                        <h2 className="text-3xl font-bold text-center mb-6">Hisab-Kitab Report</h2>
-                        <p className="text-center text-sm text-gray-500 mb-8">Generated on: {format(new Date(), "PPpp")}</p>
-
-                        <h3 className="text-2xl font-bold mb-4 border-b pb-2">Sales Summary</h3>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Period</TableHead>
-                                    <TableHead className="text-right">Total Income</TableHead>
-                                    <TableHead className="text-right">Cash</TableHead>
-                                    <TableHead className="text-right">Online</TableHead>
-                                    <TableHead className="text-right">Udhari Given</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell className="font-medium">Today's Summary</TableCell>
-                                    <TableCell className="text-right">Rs.{(dailyData.cash + dailyData.online).toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{dailyData.cash.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{dailyData.online.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{dailyData.udhari.toFixed(2)}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">This Week's Summary</TableCell>
-                                    <TableCell className="text-right">Rs.{(weeklyData.cash + weeklyData.online).toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{weeklyData.cash.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{weeklyData.online.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{weeklyData.udhari.toFixed(2)}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">This Month's Summary</TableCell>
-                                    <TableCell className="text-right">Rs.{(monthlyData.cash + monthlyData.online).toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{monthlyData.cash.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{monthlyData.online.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">Rs.{monthlyData.udhari.toFixed(2)}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell className="font-bold">All Time Summary</TableCell>
-                                    <TableCell className="text-right font-bold">Rs.{(allTimeData.cash + allTimeData.online).toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-bold">Rs.{allTimeData.cash.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-bold">Rs.{allTimeData.online.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-bold">Rs.{allTimeData.udhari.toFixed(2)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-
-                        <h3 className="text-2xl font-bold mt-12 mb-4 border-b pb-2">All Settled Bills ({paymentHistory.length})</h3>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[25%]">Date</TableHead>
-                                    <TableHead>Table</TableHead>
-                                    <TableHead>Payment</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {paymentHistory.map((bill) => (
-                                    <TableRow key={bill.id}>
-                                        <TableCell>{formatDate(bill.date, 'Pp')}</TableCell>
-                                        <TableCell>{bill.table}</TableCell>
-                                        <TableCell>{bill.paymentMethod}</TableCell>
-                                        <TableCell className="text-right font-mono">Rs.{bill.totalAmount.toFixed(2)}</TableCell>
+                    <div ref={historyTableRef}>
+                       <ReportLayout 
+                           title="Hisab-Kitab Report" 
+                           generatedOn={new Date()}
+                        >
+                            <h3 className="text-xl font-bold mt-8 mb-4 border-b pb-2">Sales Summary</h3>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Period</TableHead>
+                                        <TableHead className="text-right">Total Income</TableHead>
+                                        <TableHead className="text-right">Cash</TableHead>
+                                        <TableHead className="text-right">Online</TableHead>
+                                        <TableHead className="text-right">Udhari Given</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        
-                        <h3 className="text-2xl font-bold mt-12 mb-4 border-b pb-2">Active Udhari Bills ({udhariBills.length})</h3>
-                        {udhariBills.length > 0 ? (
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell className="font-medium">Today's Summary</TableCell>
+                                        <TableCell className="text-right">Rs.{(dailyData.cash + dailyData.online).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{dailyData.cash.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{dailyData.online.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{dailyData.udhari.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell className="font-medium">This Week's Summary</TableCell>
+                                        <TableCell className="text-right">Rs.{(weeklyData.cash + weeklyData.online).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{weeklyData.cash.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{weeklyData.online.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{weeklyData.udhari.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell className="font-medium">This Month's Summary</TableCell>
+                                        <TableCell className="text-right">Rs.{(monthlyData.cash + monthlyData.online).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{monthlyData.cash.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{monthlyData.online.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">Rs.{monthlyData.udhari.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell className="font-bold">All Time Summary</TableCell>
+                                        <TableCell className="text-right font-bold">Rs.{(allTimeData.cash + allTimeData.online).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-bold">Rs.{allTimeData.cash.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-bold">Rs.{allTimeData.online.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-bold">Rs.{allTimeData.udhari.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
+
+                            <h3 className="text-xl font-bold mt-8 mb-4 border-b pb-2">All Settled Bills ({paymentHistory.length})</h3>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="w-[25%]">Date</TableHead>
-                                        <TableHead>Customer Name</TableHead>
+                                        <TableHead>Table</TableHead>
+                                        <TableHead>Payment</TableHead>
+                                        <TableHead>Items</TableHead>
                                         <TableHead className="text-right">Amount</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {udhariBills.map((bill) => (
+                                    {paymentHistory.map((bill) => (
                                         <TableRow key={bill.id}>
                                             <TableCell>{formatDate(bill.date, 'Pp')}</TableCell>
-                                            <TableCell>{bill.customerName}</TableCell>
+                                            <TableCell>{bill.table}</TableCell>
+                                            <TableCell>{bill.paymentMethod}</TableCell>
+                                            <TableCell>{bill.items.map(i => i.name).join(', ')}</TableCell>
                                             <TableCell className="text-right font-mono">Rs.{bill.totalAmount.toFixed(2)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                                 <TableFooter>
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-right font-bold">Total Udhari</TableCell>
-                                        <TableCell className="text-right font-bold font-mono">Rs.{totalUdhari.toFixed(2)}</TableCell>
+                                        <TableCell colSpan={4} className="text-right font-bold">Total Settled</TableCell>
+                                        <TableCell className="text-right font-bold font-mono">Rs.{(allTimeData.cash + allTimeData.online).toFixed(2)}</TableCell>
                                     </TableRow>
                                 </TableFooter>
                             </Table>
-                        ) : <p className="text-gray-500">No active udhari bills.</p>}
+                            
+                            <h3 className="text-xl font-bold mt-8 mb-4 border-b pb-2">Active Udhari Bills ({udhariBills.length})</h3>
+                            {udhariBills.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[25%]">Date</TableHead>
+                                            <TableHead>Customer Name</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {udhariBills.map((bill) => (
+                                            <TableRow key={bill.id}>
+                                                <TableCell>{formatDate(bill.date, 'Pp')}</TableCell>
+                                                <TableCell>{bill.customerName}</TableCell>
+                                                <TableCell className="text-right font-mono">Rs.{bill.totalAmount.toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="text-right font-bold">Total Udhari</TableCell>
+                                            <TableCell className="text-right font-bold font-mono">Rs.{totalUdhari.toFixed(2)}</TableCell>
+                                        </TableRow>
+                                    </TableFooter>
+                                </Table>
+                            ) : <p className="text-gray-500">No active udhari bills.</p>}
+                        </ReportLayout>
                     </div>
                 </div>
             </DialogContent>
@@ -505,5 +583,3 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     );
 }
 
-
-    

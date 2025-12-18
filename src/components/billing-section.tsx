@@ -73,7 +73,12 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
     }
 
     return (
-        <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+        <Dialog open={isQrOpen} onOpenChange={(isOpen) => {
+            setIsQrOpen(isOpen);
+            if (!isOpen) {
+                setTimer(90); // Reset timer if closed manually
+            }
+        }}>
             <DialogTrigger asChild>
                 <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
             </DialogTrigger>
@@ -384,7 +389,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             </div>
                           </div>
                           <Separator className="my-4 border-dashed border-gray-400" />
-                          <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
+                          <p className="text-center text-xs text-gray-500 mt-6">पुन्हा भेट द्या!</p>
                         </div>
                       </div>
                     </div>
