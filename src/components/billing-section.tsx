@@ -6,7 +6,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, Phone, FileText } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -121,7 +121,6 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
 
 export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToUdhari, onRecordPayment, activeTable }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
-  const [mobileNumber, setMobileNumber] = useState("");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
   const billContentRef = useRef<HTMLDivElement>(null);
@@ -168,7 +167,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     setIsSettleDialogOpen(false);
   };
 
-  const generatePdf = async (action: 'download' | 'share' = 'download') => {
+  const generatePdf = async () => {
     const input = billContentRef.current;
     if (input) {
       const canvas = await html2canvas(input, { scale: 2, useCORS: true });
@@ -199,20 +198,9 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       const y = (pdfHeight - imgHeight) / 2;
 
       pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-      
       const namePart = customerName.trim().replace(/\s+/g, '_') || 'bill';
       const datePart = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
-      const fileName = `${namePart}_${datePart}.pdf`;
-      
-      pdf.save(fileName);
-      
-      if (action === 'share' && mobileNumber) {
-        // We can't directly attach the file, but we can open WhatsApp with a pre-filled message.
-        // The user then has to attach the downloaded file.
-        const message = `Dear ${customerName || 'Customer'},\n\nPlease find your bill from Hotel Sugraran attached.\nTotal Amount: Rs.${totalAmount.toFixed(2)}`;
-        const whatsappUrl = `https://wa.me/91${mobileNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
-      }
+      pdf.save(`${namePart}_${datePart}.pdf`);
     }
   };
 
@@ -282,7 +270,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       description: `Bill for ${customerName.trim()} has been saved to Udhari.`,
     });
     setCustomerName("");
-    setMobileNumber("");
   };
 
   const isParcel = activeTable === 'Parcel';
@@ -309,11 +296,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                     <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
                     {customerName && <div><strong>Customer:</strong> {customerName}</div>}
                 </div>
-                {mobileNumber && (
-                  <div className="flex justify-start text-xs mb-3">
-                      <div><strong>Mobile No:</strong> {mobileNumber}</div>
-                  </div>
-                )}
                 
                 <Separator className="my-3 border-dashed border-black"/>
                 
@@ -380,25 +362,12 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-             <div className="space-y-2">
-                <Input
-                  placeholder="Customer Name (for Udhari/Invoice)"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className={cn("text-base sm:text-sm", shake && 'animate-shake')}
-                />
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="tel"
-                    placeholder="Mobile Number (Optional)"
-                    value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value)}
-                    className="pl-10 text-base sm:text-sm"
-                  />
-                </div>
-            </div>
-
+             <Input
+                placeholder="Customer Name (for Udhari/Invoice)"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className={cn("text-base sm:text-sm", shake && 'animate-shake')}
+            />
 
             <ScrollArea className="h-64 pr-4">
               <div className="space-y-3">
@@ -476,82 +445,74 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   </Button>
                 </DialogTrigger>
                 {billNumber && (
-                  <DialogContent className="max-w-md w-full flex flex-col max-h-[90vh]">
+                  <DialogContent>
                     <DialogHeader>
                       <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                     </DialogHeader>
-                    <div className="flex-grow overflow-y-auto pr-6 -mr-6">
-                       <div className="p-4 sm:p-6 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
-                            <div className="text-center mb-4">
-                              <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                              <p className="text-xs mt-1">Contact: 8530378745</p>
-                              <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
-                            </div>
-                            
-                            <Separator className="my-3 border-dashed border-black" />
+                    <div className="p-4 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
+                        <div className="text-center mb-4">
+                            <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                            <p className="text-xs mt-1">Contact: 8530378745</p>
+                            <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
+                        </div>
+                        
+                        <Separator className="my-3 border-dashed border-black" />
 
-                            <div className="flex justify-between text-xs mb-3">
-                              <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
-                              <div><strong>Date:</strong> {billDate}</div>
-                            </div>
-                            <div className="flex justify-between text-xs mb-3">
-                              <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
-                              {customerName && <div><strong>Customer:</strong> {customerName}</div>}
-                            </div>
-                            {mobileNumber && (
-                              <div className="flex justify-start text-xs mb-3">
-                                  <div><strong>Mobile No:</strong> {mobileNumber}</div>
-                              </div>
-                            )}
-                            
-                            <Separator className="my-3 border-dashed border-black"/>
-                            
-                            <table className="w-full text-sm">
-                              <thead>
+                        <div className="flex justify-between text-xs mb-3">
+                            <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
+                            <div><strong>Date:</strong> {billDate}</div>
+                        </div>
+                        <div className="flex justify-between text-xs mb-3">
+                            <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
+                            {customerName && <div><strong>Customer:</strong> {customerName}</div>}
+                        </div>
+                        
+                        <Separator className="my-3 border-dashed border-black"/>
+                        
+                        <table className="w-full text-sm">
+                            <thead>
                                 <tr className="border-b-2 border-black">
-                                  <th className="text-left py-1 font-bold w-1/2">Item</th>
-                                  <th className="text-center py-1 font-bold">Qty</th>
-                                  <th className="text-right py-1 font-bold">Price</th>
-                                  <th className="text-right py-1 font-bold">Amount</th>
+                                    <th className="text-left py-1 font-bold w-1/2">Item</th>
+                                    <th className="text-center py-1 font-bold">Qty</th>
+                                    <th className="text-right py-1 font-bold">Price</th>
+                                    <th className="text-right py-1 font-bold">Amount</th>
                                 </tr>
-                              </thead>
-                              <tbody>
+                            </thead>
+                            <tbody>
                                 {items.map(item => (
-                                  <tr key={item.id} className="border-b border-gray-300">
-                                    <td className="py-1">{item.name}</td>
-                                    <td className="text-center py-1">{item.quantity}</td>
-                                    <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
-                                    <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
-                                  </tr>
+                                    <tr key={item.id} className="border-b border-gray-300">
+                                        <td className="py-1">{item.name}</td>
+                                        <td className="text-center py-1">{item.quantity}</td>
+                                        <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
+                                        <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                                    </tr>
                                 ))}
-                              </tbody>
-                            </table>
-                            
-                            <div className="mt-4 text-sm flex justify-end">
-                                <div className="w-full sm:w-1/2 space-y-1">
-                                    <div className="flex justify-between">
-                                        <span className="text-black">Subtotal:</span>
-                                        <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                                        <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
-                                    </div>
-                                    <Separator className="my-1 border-dashed border-black" />
-                                    <div className="flex justify-between font-bold text-base text-black">
-                                        <span>TOTAL:</span>
-                                        <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
-                                    </div>
+                            </tbody>
+                        </table>
+                        
+                        <div className="mt-4 text-sm flex justify-end">
+                            <div className="w-1/2 space-y-1">
+                                <div className="flex justify-between">
+                                    <span className="text-black">Subtotal:</span>
+                                    <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                                    <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                                </div>
+                                <Separator className="my-1 border-dashed border-black" />
+                                <div className="flex justify-between font-bold text-base text-black">
+                                    <span>TOTAL:</span>
+                                    <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
                                 </div>
                             </div>
-                          </div>
+                        </div>
                     </div>
-                    <DialogFooter className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                       <div className="grid grid-cols-2 gap-2">
-                         <Button variant="secondary" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
-                         <Button variant="secondary" onClick={() => generatePdf('download')}><Download className="mr-2 h-4 w-4" />PDF</Button>
+                    <DialogFooter className="grid grid-cols-2 gap-2">
+                       <div className="flex gap-2">
+                         <Button variant="secondary" size="sm" onClick={handlePrint}>Print</Button>
+                         <Button variant="secondary" size="sm" onClick={generatePdf}>PDF</Button>
                        </div>
-                        <Button variant="secondary" onClick={() => generatePdf('share')} disabled={!mobileNumber}><FileText className="mr-2 h-4 w-4" />Share via WhatsApp</Button>
                           <QRCodeDialog 
                             upiUrl={upiUrl}
                             totalAmount={totalAmount}
