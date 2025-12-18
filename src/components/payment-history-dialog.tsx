@@ -467,7 +467,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                     </AlertDialog>
                 </div>
 
-                <div className="opacity-0 absolute -z-50 top-0 left-0 h-0 w-0 overflow-hidden" >
+                <div className="fixed -left-[9999px] top-0 opacity-0" >
                     <div ref={historyTableRef}>
                        <ReportLayout 
                            title="Hisab-Kitab Report" 
@@ -583,3 +583,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     );
 }
 
+
+
+
+    
