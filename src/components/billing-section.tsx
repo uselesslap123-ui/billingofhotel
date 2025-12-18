@@ -6,7 +6,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, Phone } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, Phone, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -168,18 +168,77 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     setIsSettleDialogOpen(false);
   };
 
-  const handleDownloadPdf = () => {
+  const generatePdf = async (action: 'download' | 'share' = 'download') => {
     const input = billContentRef.current;
     if (input) {
-      // Ensure the element is visible for html2canvas to capture it correctly
+      const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [240, 360]
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const ratio = canvasWidth / canvasHeight;
+
+      let imgWidth = pdfWidth - 20; // 10mm margin
+      let imgHeight = imgWidth / ratio;
+      
+      if (imgHeight > pdfHeight - 20) {
+          imgHeight = pdfHeight - 20;
+          imgWidth = imgHeight * ratio;
+      }
+
+      const x = (pdfWidth - imgWidth) / 2;
+      const y = (pdfHeight - imgHeight) / 2;
+
+      pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+      
+      const namePart = customerName.trim().replace(/\s+/g, '_') || 'bill';
+      const datePart = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
+      const fileName = `${namePart}_${datePart}.pdf`;
+      
+      pdf.save(fileName);
+      
+      if (action === 'share' && mobileNumber) {
+        // We can't directly attach the file, but we can open WhatsApp with a pre-filled message.
+        // The user then has to attach the downloaded file.
+        const message = `Dear ${customerName || 'Customer'},\n\nPlease find your bill from Hotel Sugraran attached.\nTotal Amount: Rs.${totalAmount.toFixed(2)}`;
+        const whatsappUrl = `https://wa.me/91${mobileNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      }
+    }
+  };
+
+  const handlePrint = () => {
+    const input = billContentRef.current;
+    if (input) {
+      // Temporarily make the element visible for printing
       input.style.position = 'fixed';
       input.style.left = '0';
       input.style.top = '0';
       input.style.zIndex = '9999';
-      input.style.background = 'white'; // Explicitly set background
+      input.style.background = 'white';
       
-      html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
-        // Hide the element again after capture
+      const printWindow = window.open('', '_blank');
+      printWindow?.document.write('<html><head><title>Print Bill</title>');
+      printWindow?.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; } .bill-print-container { font-family: sans-serif; } }</style>');
+      printWindow?.document.write('</head><body>');
+      printWindow?.document.write(input.innerHTML);
+      printWindow?.document.write('</body></html>');
+      printWindow?.document.close();
+      printWindow?.focus();
+
+      setTimeout(() => {
+        printWindow?.print();
+        printWindow?.close();
+        // Hide the element again
         if(billContentRef.current) {
             billContentRef.current.style.position = '';
             billContentRef.current.style.left = '';
@@ -187,56 +246,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
             billContentRef.current.style.zIndex = '';
             billContentRef.current.style.background = '';
         }
-
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "mm",
-          format: [240, 360]
-        });
-
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-
-        let imgWidth = pdfWidth - 20; // 10mm margin
-        let imgHeight = imgWidth / ratio;
-        
-        if (imgHeight > pdfHeight - 20) {
-            imgHeight = pdfHeight - 20; // 10mm margin
-            imgWidth = imgHeight * ratio;
-        }
-
-        const x = (pdfWidth - imgWidth) / 2;
-        const y = (pdfHeight - imgHeight) / 2;
-  
-        pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-        
-        const namePart = customerName.trim().replace(/\s+/g, '_') || 'bill';
-        const datePart = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
-        const fileName = `${namePart}_${datePart}.pdf`;
-
-        pdf.save(fileName);
-      });
-    }
-  };
-
-  const handlePrint = () => {
-    const input = document.getElementById("bill-to-print-settle");
-    if (input) {
-      const printWindow = window.open('', '_blank');
-      printWindow?.document.write('<html><head><title>Print Bill</title>');
-      printWindow?.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; } #bill-to-print-settle { font-family: sans-serif; } }</style>');
-      printWindow?.document.write('</head><body>');
-      printWindow?.document.write(input.innerHTML);
-      printWindow?.document.write('</body></html>');
-      printWindow?.document.close();
-      printWindow?.focus();
-      setTimeout(() => {
-        printWindow?.print();
-        printWindow?.close();
       }, 250);
     }
   };
@@ -280,89 +289,87 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   
   return (
     <>
-      {/* Hidden div for PDF generation */}
-      <div className="absolute -left-[9999px] top-0 w-[800px]">
-          <div id="bill-to-print-settle" className="font-sans">
-              <div ref={billContentRef} className="p-6 bg-white text-black text-sm">
-                  <div className="border-2 border-black p-4">
-                      <div className="text-center mb-4">
-                          <h3 className="text-2xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                          <p className="text-sm mt-1">Contact: 8530378745</p>
-                          <p className="text-sm font-bold mt-2">Official Bill Receipt</p>
-                      </div>
-                      
-                      <Separator className="my-3 border-dashed border-black" />
+      {/* Hidden div for PDF/Print generation */}
+      <div className="absolute top-0 -z-50 opacity-0" aria-hidden="true">
+        <div ref={billContentRef} className="bill-print-container w-[800px] p-6 bg-white text-black text-sm">
+            <div className="border-2 border-black p-4">
+                <div className="text-center mb-4">
+                    <h3 className="text-2xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                    <p className="text-sm mt-1">Contact: 8530378745</p>
+                    <p className="text-sm font-bold mt-2">Official Bill Receipt</p>
+                </div>
+                
+                <Separator className="my-3 border-dashed border-black" />
 
-                      <div className="flex justify-between text-xs mb-3">
-                          <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
-                          <div><strong>Date:</strong> {billDate}</div>
-                      </div>
-                      <div className="flex justify-between text-xs mb-3">
-                          <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
-                          {customerName && <div><strong>Customer:</strong> {customerName}</div>}
-                      </div>
-                      {mobileNumber && (
-                        <div className="flex justify-between text-xs mb-3">
-                            <div><strong>Mobile No:</strong> {mobileNumber}</div>
-                        </div>
-                      )}
-                      
-                      <Separator className="my-3 border-dashed border-black"/>
-                      
-                      <table className="w-full text-sm">
-                          <thead>
-                              <tr className="border-b-2 border-black">
-                                  <th className="text-left py-1 font-bold w-1/2">Item</th>
-                                  <th className="text-center py-1 font-bold">Qty</th>
-                                  <th className="text-right py-1 font-bold">Price</th>
-                                  <th className="text-right py-1 font-bold">Amount</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {items.map(item => (
-                                  <tr key={item.id} className="border-b border-gray-300">
-                                      <td className="py-1">{item.name}</td>
-                                      <td className="text-center py-1">{item.quantity}</td>
-                                      <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
-                                      <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
-                                  </tr>
-                              ))}
-                          </tbody>
-                      </table>
-                      
-                      <div className="mt-4 text-sm flex justify-end">
-                          <div className="w-1/2 space-y-1">
-                              <div className="flex justify-between">
-                                  <span className="text-black">Subtotal:</span>
-                                  <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                  <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                                  <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
-                              </div>
-                              <Separator className="my-1 border-dashed border-black" />
-                              <div className="flex justify-between font-bold text-base text-black">
-                                  <span>TOTAL:</span>
-                                  <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
-                              </div>
-                          </div>
-                      </div>
-
-                      <div className="flex justify-between items-end mt-12 text-xs">
-                          <div>
-                              <p>Payment Mode: ________________</p>
-                          </div>
-                          <div className="text-center">
-                              <p className="border-t border-black px-8 pt-1">Authorized Signature</p>
-                          </div>
-                      </div>
-                      
-                      <p className="text-center text-xs text-gray-700 mt-8">
-                          Thank you for your visit!
-                      </p>
+                <div className="flex justify-between text-xs mb-3">
+                    <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
+                    <div><strong>Date:</strong> {billDate}</div>
+                </div>
+                <div className="flex justify-between text-xs mb-3">
+                    <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
+                    {customerName && <div><strong>Customer:</strong> {customerName}</div>}
+                </div>
+                {mobileNumber && (
+                  <div className="flex justify-start text-xs mb-3">
+                      <div><strong>Mobile No:</strong> {mobileNumber}</div>
                   </div>
-              </div>
-          </div>
+                )}
+                
+                <Separator className="my-3 border-dashed border-black"/>
+                
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b-2 border-black">
+                            <th className="text-left py-1 font-bold w-1/2">Item</th>
+                            <th className="text-center py-1 font-bold">Qty</th>
+                            <th className="text-right py-1 font-bold">Price</th>
+                            <th className="text-right py-1 font-bold">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items.map(item => (
+                            <tr key={item.id} className="border-b border-gray-300">
+                                <td className="py-1">{item.name}</td>
+                                <td className="text-center py-1">{item.quantity}</td>
+                                <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
+                                <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                
+                <div className="mt-4 text-sm flex justify-end">
+                    <div className="w-1/2 space-y-1">
+                        <div className="flex justify-between">
+                            <span className="text-black">Subtotal:</span>
+                            <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                            <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                        </div>
+                        <Separator className="my-1 border-dashed border-black" />
+                        <div className="flex justify-between font-bold text-base text-black">
+                            <span>TOTAL:</span>
+                            <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-end mt-12 text-xs">
+                    <div>
+                        <p>Payment Mode: ________________</p>
+                    </div>
+                    <div className="text-center">
+                        <p className="border-t border-black px-8 pt-1">Authorized Signature</p>
+                    </div>
+                </div>
+                
+                <p className="text-center text-xs text-gray-700 mt-8">
+                    Thank you for your visit!
+                </p>
+            </div>
+        </div>
       </div>
       
       <Card className="sticky top-20 shadow-lg">
@@ -492,7 +499,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                               {customerName && <div><strong>Customer:</strong> {customerName}</div>}
                             </div>
                             {mobileNumber && (
-                              <div className="flex justify-between text-xs mb-3">
+                              <div className="flex justify-start text-xs mb-3">
                                   <div><strong>Mobile No:</strong> {mobileNumber}</div>
                               </div>
                             )}
@@ -502,7 +509,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="border-b-2 border-black">
-                                  <th className="text-left py-1 font-bold">Item</th>
+                                  <th className="text-left py-1 font-bold w-1/2">Item</th>
                                   <th className="text-center py-1 font-bold">Qty</th>
                                   <th className="text-right py-1 font-bold">Price</th>
                                   <th className="text-right py-1 font-bold">Amount</th>
@@ -520,31 +527,30 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                               </tbody>
                             </table>
                             
-                            <div className="mt-4 text-sm space-y-1">
-                              <div className="flex justify-end">
-                                <div className="w-1/2">
-                                  <div className="flex justify-between">
-                                    <span className="text-black">Subtotal:</span>
-                                    <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                                    <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
-                                  </div>
-                                  <Separator className="my-1 border-dashed border-black" />
-                                  <div className="flex justify-between font-bold text-base text-black">
-                                    <span>TOTAL:</span>
-                                    <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
-                                  </div>
+                            <div className="mt-4 text-sm flex justify-end">
+                                <div className="w-1/2 space-y-1">
+                                    <div className="flex justify-between">
+                                        <span className="text-black">Subtotal:</span>
+                                        <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                                        <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                                    </div>
+                                    <Separator className="my-1 border-dashed border-black" />
+                                    <div className="flex justify-between font-bold text-base text-black">
+                                        <span>TOTAL:</span>
+                                        <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
+                                    </div>
                                 </div>
-                              </div>
                             </div>
                           </div>
                     </div>
                     <DialogFooter className="pt-4 flex-wrap items-center justify-center gap-2">
                        <div className="flex gap-2 justify-center flex-wrap">
                          <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
-                         <Button variant="secondary" size="sm" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />PDF</Button>
+                         <Button variant="secondary" size="sm" onClick={() => generatePdf('download')}><Download className="mr-2 h-4 w-4" />PDF</Button>
+                         <Button variant="secondary" size="sm" onClick={() => generatePdf('share')} disabled={!mobileNumber}><FileText className="mr-2 h-4 w-4" />Share</Button>
                           <QRCodeDialog 
                             upiUrl={upiUrl}
                             totalAmount={totalAmount}
@@ -568,6 +574,4 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
-
-
     
