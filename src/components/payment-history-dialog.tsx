@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import type { SettledBill, UdhariBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,10 +31,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "./ui/table";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import { ReportLayout } from "./report-layout";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 
 interface PaymentHistoryDialogProps {
@@ -119,7 +116,6 @@ type ItemSalesReport = {
 }
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
-    const historyTableRef = useRef<HTMLDivElement>(null);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
     
@@ -146,9 +142,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
      const paymentDays = useMemo(() => {
         const daysWithPayments = new Set<string>();
         paymentHistory.forEach(p => {
-             if (p.date) {
-                daysWithPayments.add(format(new Date(p.date), 'yyyy-MM-dd'));
-            }
+            daysWithPayments.add(format(new Date(p.date), 'yyyy-MM-dd'));
         });
         return Array.from(daysWithPayments).map(dayStr => new Date(dayStr));
     }, [paymentHistory]);
@@ -184,7 +178,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     }, [paymentHistory, udhariBills]);
 
 
-    const downloadCSV = () => {
+    const downloadHisabKitab = () => {
         const summaries = [
             ["", "Total Income", "Cash", "Online", "Udhari Given"],
             ["Today's Summary", (dailyData.cash + dailyData.online).toFixed(2), dailyData.cash.toFixed(2), dailyData.online.toFixed(2), dailyData.udhari.toFixed(2)],
@@ -197,7 +191,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const settledBillsRows = paymentHistory.map(bill => [
             "Settled Bill",
             bill.id,
-            bill.date ? format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss") : '',
+            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
             bill.table,
             bill.totalAmount.toFixed(2),
             bill.paymentMethod,
@@ -207,7 +201,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         const udhariBillsRows = udhariBills.map(bill => [
             "Udhari Bill",
             bill.id,
-            bill.date ? format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss") : '',
+            format(new Date(bill.date), "yyyy-MM-dd HH:mm:ss"),
             bill.customerName,
             bill.totalAmount.toFixed(2),
             "Udhari",
@@ -228,36 +222,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         document.body.removeChild(link);
     }
 
-    const downloadPDF = () => {
-        const input = historyTableRef.current;
-        if (input) {
-            html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                const ratio = pdfWidth / canvasWidth;
-                const pdfHeight = canvasHeight * ratio;
-                
-                let position = 0;
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                let heightLeft = pdfHeight;
-    
-                heightLeft -= pdf.internal.pageSize.getHeight();
-    
-                while (heightLeft > 0) {
-                  position = heightLeft - pdfHeight;
-                  pdf.addPage();
-                  pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                  heightLeft -= pdf.internal.pageSize.getHeight();
-                }
-
-                pdf.save(`Hisab_Kitab_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-            });
-        }
-    };
-
 
     const itemSalesReport = useMemo(() => {
         const report: ItemSalesReport = {};
@@ -274,8 +238,6 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     }, [paymentHistory]);
 
     const mostSellingItems = useMemo(() => itemSalesReport.slice(0, 5), [itemSalesReport]);
-    
-    const totalUdhari = useMemo(() => udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0), [udhariBills]);
     
     const cashPayments = useMemo(() => sortedHistory.filter(p => p.paymentMethod === 'Cash'), [sortedHistory]);
     const onlinePayments = useMemo(() => sortedHistory.filter(p => p.paymentMethod === 'Online'), [sortedHistory]);
@@ -455,128 +417,15 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Download Hisab-Kitab</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Choose the format to download your complete payment history. This will include sales summaries and all active udhari bills.
+                                    This will download a CSV file of your complete payment history, including sales summaries and all active udhari bills.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={downloadCSV}>Download CSV (Excel)</AlertDialogAction>
-                                <AlertDialogAction onClick={downloadPDF}>Download PDF</AlertDialogAction>
+                                <AlertDialogAction onClick={downloadHisabKitab}>Download CSV (Excel)</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </div>
-
-                <div className="fixed -left-[9999px] top-0 opacity-0" >
-                    <div ref={historyTableRef}>
-                       <ReportLayout 
-                           title="Hisab-Kitab Report" 
-                           generatedOn={new Date()}
-                        >
-                            <h3 className="text-xl font-bold mt-8 mb-4 border-b pb-2">Sales Summary</h3>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Period</TableHead>
-                                        <TableHead className="text-right">Total Income</TableHead>
-                                        <TableHead className="text-right">Cash</TableHead>
-                                        <TableHead className="text-right">Online</TableHead>
-                                        <TableHead className="text-right">Udhari Given</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow>
-                                        <TableCell className="font-medium">Today's Summary</TableCell>
-                                        <TableCell className="text-right">Rs.{(dailyData.cash + dailyData.online).toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{dailyData.cash.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{dailyData.online.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{dailyData.udhari.toFixed(2)}</TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell className="font-medium">This Week's Summary</TableCell>
-                                        <TableCell className="text-right">Rs.{(weeklyData.cash + weeklyData.online).toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{weeklyData.cash.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{weeklyData.online.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{weeklyData.udhari.toFixed(2)}</TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell className="font-medium">This Month's Summary</TableCell>
-                                        <TableCell className="text-right">Rs.{(monthlyData.cash + monthlyData.online).toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{monthlyData.cash.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{monthlyData.online.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">Rs.{monthlyData.udhari.toFixed(2)}</TableCell>
-                                    </TableRow>
-                                </TableBody>
-                                <TableFooter>
-                                    <TableRow>
-                                        <TableCell className="font-bold">All Time Summary</TableCell>
-                                        <TableCell className="text-right font-bold">Rs.{(allTimeData.cash + allTimeData.online).toFixed(2)}</TableCell>
-                                        <TableCell className="text-right font-bold">Rs.{allTimeData.cash.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right font-bold">Rs.{allTimeData.online.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right font-bold">Rs.{allTimeData.udhari.toFixed(2)}</TableCell>
-                                    </TableRow>
-                                </TableFooter>
-                            </Table>
-
-                            <h3 className="text-xl font-bold mt-8 mb-4 border-b pb-2">All Settled Bills ({paymentHistory.length})</h3>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[25%]">Date</TableHead>
-                                        <TableHead>Table</TableHead>
-                                        <TableHead>Payment</TableHead>
-                                        <TableHead>Items</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {paymentHistory.map((bill) => (
-                                        <TableRow key={bill.id}>
-                                            <TableCell>{formatDate(bill.date, 'Pp')}</TableCell>
-                                            <TableCell>{bill.table}</TableCell>
-                                            <TableCell>{bill.paymentMethod}</TableCell>
-                                            <TableCell>{bill.items.map(i => i.name).join(', ')}</TableCell>
-                                            <TableCell className="text-right font-mono">Rs.{bill.totalAmount.toFixed(2)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                                <TableFooter>
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-right font-bold">Total Settled</TableCell>
-                                        <TableCell className="text-right font-bold font-mono">Rs.{(allTimeData.cash + allTimeData.online).toFixed(2)}</TableCell>
-                                    </TableRow>
-                                </TableFooter>
-                            </Table>
-                            
-                            <h3 className="text-xl font-bold mt-8 mb-4 border-b pb-2">Active Udhari Bills ({udhariBills.length})</h3>
-                            {udhariBills.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[25%]">Date</TableHead>
-                                            <TableHead>Customer Name</TableHead>
-                                            <TableHead className="text-right">Amount</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {udhariBills.map((bill) => (
-                                            <TableRow key={bill.id}>
-                                                <TableCell>{formatDate(bill.date, 'Pp')}</TableCell>
-                                                <TableCell>{bill.customerName}</TableCell>
-                                                <TableCell className="text-right font-mono">Rs.{bill.totalAmount.toFixed(2)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TableCell colSpan={2} className="text-right font-bold">Total Udhari</TableCell>
-                                            <TableCell className="text-right font-bold font-mono">Rs.{totalUdhari.toFixed(2)}</TableCell>
-                                        </TableRow>
-                                    </TableFooter>
-                                </Table>
-                            ) : <p className="text-gray-500">No active udhari bills.</p>}
-                        </ReportLayout>
-                    </div>
                 </div>
             </DialogContent>
         </Dialog>
@@ -585,5 +434,7 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
 
 
 
+
+    
 
     

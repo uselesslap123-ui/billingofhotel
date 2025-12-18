@@ -40,32 +40,6 @@ const PAYEE_NAME = "Hotel Sugaran";
 
 const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: string, totalAmount: number, onConfirmPayment: () => void }) => {
     const [isQrOpen, setIsQrOpen] = useState(false);
-    const [timer, setTimer] = useState(90);
-    const { toast } = useToast();
-
-    useEffect(() => {
-        let countdown: NodeJS.Timeout;
-        if (isQrOpen) {
-            setTimer(90); // Reset timer on open
-            countdown = setInterval(() => {
-                setTimer(prev => {
-                    if (prev <= 1) {
-                        clearInterval(countdown);
-                        setIsQrOpen(false);
-                        toast({
-                            title: "Payment Failed",
-                            description: "The payment session timed out.",
-                            variant: "destructive",
-                        });
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        }
-
-        return () => clearInterval(countdown);
-    }, [isQrOpen, toast]);
 
     const handlePaymentConfirm = () => {
         setIsQrOpen(false);
@@ -73,12 +47,7 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
     }
 
     return (
-        <Dialog open={isQrOpen} onOpenChange={(isOpen) => {
-            setIsQrOpen(isOpen);
-            if (!isOpen) {
-                setTimer(90); // Reset timer if closed manually
-            }
-        }}>
+        <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
             <DialogTrigger asChild>
                 <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
             </DialogTrigger>
@@ -92,10 +61,6 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
                     </div>
                     <p className="mt-4 font-bold text-xl">Total: Rs.{totalAmount.toFixed(2)}</p>
                     <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
-                    <div className="mt-4 flex items-center text-sm text-destructive">
-                        <Timer className="mr-2 h-4 w-4" />
-                        <span>Expires in {Math.floor(timer / 60)}:{('0' + (timer % 60)).slice(-2)}</span>
-                    </div>
                 </div>
                 <DialogFooter>
                     <Button className="w-full" onClick={handlePaymentConfirm}>Confirm Payment</Button>
@@ -389,7 +354,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             </div>
                           </div>
                           <Separator className="my-4 border-dashed border-gray-400" />
-                          <p className="text-center text-xs text-gray-500 mt-6">पुन्हा भेट द्या!</p>
+                          <p className="text-center text-xs text-gray-500 mt-6">Thank you for your visit!</p>
                         </div>
                       </div>
                     </div>
@@ -420,3 +385,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
+
+    
