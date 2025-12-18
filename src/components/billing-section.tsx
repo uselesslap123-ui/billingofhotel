@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -449,27 +450,27 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                     <DialogHeader>
                       <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                     </DialogHeader>
-                    <div className="p-4 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
-                        <div className="text-center mb-4">
+                    <div className="p-4 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg overflow-x-auto">
+                        <div className="text-center mb-4 min-w-[300px]">
                             <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
                             <p className="text-xs mt-1">Contact: 8530378745</p>
                             <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
                         </div>
                         
-                        <Separator className="my-3 border-dashed border-black" />
+                        <Separator className="my-3 border-dashed border-black min-w-[300px]" />
 
-                        <div className="flex justify-between text-xs mb-3">
+                        <div className="flex justify-between text-xs mb-3 min-w-[300px]">
                             <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
                             <div><strong>Date:</strong> {billDate}</div>
                         </div>
-                        <div className="flex justify-between text-xs mb-3">
+                        <div className="flex justify-between text-xs mb-3 min-w-[300px]">
                             <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
                             {customerName && <div><strong>Customer:</strong> {customerName}</div>}
                         </div>
                         
-                        <Separator className="my-3 border-dashed border-black"/>
+                        <Separator className="my-3 border-dashed border-black min-w-[300px]"/>
                         
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm min-w-[300px]">
                             <thead>
                                 <tr className="border-b-2 border-black">
                                     <th className="text-left py-1 font-bold w-1/2">Item</th>
@@ -490,7 +491,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             </tbody>
                         </table>
                         
-                        <div className="mt-4 text-sm flex justify-end">
+                        <div className="mt-4 text-sm flex justify-end min-w-[300px]">
                             <div className="w-1/2 space-y-1">
                                 <div className="flex justify-between">
                                     <span className="text-black">Subtotal:</span>
