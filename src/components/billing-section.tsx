@@ -91,7 +91,7 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
     return (
         <Dialog open={isQrOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
+                <Button className="w-full"><CreditCard className="mr-2 h-4 w-4" /> Pay Online</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-xs">
                 <DialogHeader>
@@ -476,12 +476,12 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   </Button>
                 </DialogTrigger>
                 {billNumber && (
-                  <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
+                  <DialogContent className="max-w-md w-full flex flex-col max-h-[90vh]">
                     <DialogHeader>
                       <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                     </DialogHeader>
                     <div className="flex-grow overflow-y-auto pr-6 -mr-6">
-                       <div className="p-6 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
+                       <div className="p-4 sm:p-6 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
                             <div className="text-center mb-4">
                               <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
                               <p className="text-xs mt-1">Contact: 8530378745</p>
@@ -528,7 +528,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             </table>
                             
                             <div className="mt-4 text-sm flex justify-end">
-                                <div className="w-1/2 space-y-1">
+                                <div className="w-full sm:w-1/2 space-y-1">
                                     <div className="flex justify-between">
                                         <span className="text-black">Subtotal:</span>
                                         <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
@@ -546,20 +546,20 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             </div>
                           </div>
                     </div>
-                    <DialogFooter className="pt-4 flex-wrap items-center justify-center gap-2">
-                       <div className="flex gap-2 justify-center flex-wrap">
-                         <Button variant="secondary" size="sm" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
-                         <Button variant="secondary" size="sm" onClick={() => generatePdf('download')}><Download className="mr-2 h-4 w-4" />PDF</Button>
-                         <Button variant="secondary" size="sm" onClick={() => generatePdf('share')} disabled={!mobileNumber}><FileText className="mr-2 h-4 w-4" />Share</Button>
+                    <DialogFooter className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                       <div className="grid grid-cols-2 gap-2">
+                         <Button variant="secondary" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print</Button>
+                         <Button variant="secondary" onClick={() => generatePdf('download')}><Download className="mr-2 h-4 w-4" />PDF</Button>
+                       </div>
+                        <Button variant="secondary" onClick={() => generatePdf('share')} disabled={!mobileNumber}><FileText className="mr-2 h-4 w-4" />Share via WhatsApp</Button>
                           <QRCodeDialog 
                             upiUrl={upiUrl}
                             totalAmount={totalAmount}
                             onConfirmPayment={() => handlePayment('Online')}
                           />
                           <DialogClose asChild>
-                             <Button size="sm" variant="secondary" onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
+                             <Button onClick={() => handlePayment('Cash')} className="w-full"><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
                           </DialogClose>
-                       </div>
                     </DialogFooter>
                   </DialogContent>
                 )}
@@ -574,4 +574,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
+    
+
     
