@@ -160,9 +160,6 @@ export default function Home() {
       }
       return { ...prevBills, [activeTable]: newTableBill };
     });
-     if (isMobile) {
-      setActiveTab("bill");
-    }
   };
 
   const addUdhariToBill = (udhariBill: UdhariBill) => {
@@ -372,7 +369,7 @@ export default function Home() {
       </main>
 
       {!isMobile && (
-        <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 border-t mt-auto">
+        <footer className="container mx-auto px-4 sm:px-6 lg:p-8 py-4 border-t mt-auto">
           <p className="text-center text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Hotel Suvidha. All rights reserved.
           </p>
