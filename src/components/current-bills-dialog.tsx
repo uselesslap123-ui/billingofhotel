@@ -15,6 +15,8 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CurrentBillsDialogProps {
     bills: Bills;
@@ -49,7 +51,8 @@ const BillCard = ({ table, items }: { table: string, items: BillItem[] }) => {
 };
 
 export function CurrentBillsDialog({ bills }: CurrentBillsDialogProps) {
-    const activeBillEntries = Object.entries(bills).filter(([, items]) => items.length > 0);
+    const activeBillEntries = Object.entries(bills).filter(([, items]) => items && items.length > 0);
+    const isMobile = useIsMobile();
     
     const totalActiveAmount = useMemo(() => {
         return activeBillEntries.reduce((total, [, billItems]) => {
@@ -59,14 +62,31 @@ export function CurrentBillsDialog({ bills }: CurrentBillsDialogProps) {
             return total + subtotal + gstAmount;
         }, 0);
     }, [activeBillEntries]);
+    
+    const TriggerButton = () => (
+         <Button variant="outline" size={isMobile ? "icon" : "default"}>
+            <ClipboardList className={isMobile ? "h-5 w-5" : "mr-2 h-4 w-4"} /> 
+            <span className="hidden sm:inline">Current Bills ({activeBillEntries.length})</span>
+        </Button>
+    )
 
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline">
-                    <ClipboardList className="mr-0 sm:mr-2 h-4 w-4" /> 
-                    <span className="hidden sm:inline">Current Bills ({activeBillEntries.length})</span>
-                </Button>
+                {isMobile ? (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <TriggerButton />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Current Bills ({activeBillEntries.length})</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                ) : (
+                    <TriggerButton />
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-xl md:max-w-2xl">
                 <DialogHeader>

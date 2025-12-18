@@ -7,7 +7,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +51,19 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
         if (isQrOpen) {
             setCountdown(PAYMENT_TIMEOUT);
             timerRef.current = setInterval(() => {
-                setCountdown(prev => prev - 1);
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                         if(timerRef.current) clearInterval(timerRef.current);
+                         setIsQrOpen(false);
+                         toast({
+                             variant: "destructive",
+                             title: "Payment Timed Out",
+                             description: "The QR code expired. Please try again.",
+                         });
+                         return 0;
+                    }
+                    return prev - 1;
+                });
             }, 1000);
         } else {
             if (timerRef.current) {
@@ -64,19 +76,7 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
                 clearInterval(timerRef.current);
             }
         };
-    }, [isQrOpen]);
-
-    useEffect(() => {
-        if (countdown <= 0) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            setIsQrOpen(false);
-            toast({
-                variant: "destructive",
-                title: "Payment Timed Out",
-                description: "The QR code expired. Please try again.",
-            });
-        }
-    }, [countdown, toast]);
+    }, [isQrOpen, toast]);
     
     const handlePaymentConfirm = () => {
         setIsQrOpen(false);
@@ -171,7 +171,22 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const generatePdf = async () => {
     const input = billContentRef.current;
     if (input) {
+      // Ensure the content is visible for capture
+      input.style.position = 'fixed';
+      input.style.left = '0';
+      input.style.top = '0';
+      input.style.zIndex = '9999';
+      input.style.background = 'white';
+
       const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+      
+      // Hide the element again
+      input.style.position = '';
+      input.style.left = '';
+      input.style.top = '';
+      input.style.zIndex = '';
+      input.style.background = '';
+      
       const imgData = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF({
@@ -181,24 +196,12 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
       const ratio = canvasWidth / canvasHeight;
-
-      let imgWidth = pdfWidth - 20; // 10mm margin
-      let imgHeight = imgWidth / ratio;
+      const imgHeight = pdfWidth / ratio;
       
-      if (imgHeight > pdfHeight - 20) {
-          imgHeight = pdfHeight - 20;
-          imgWidth = imgHeight * ratio;
-      }
-
-      const x = (pdfWidth - imgWidth) / 2;
-      const y = (pdfHeight - imgHeight) / 2;
-
-      pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+      pdf.addImage(imgData, "PNG", 0, 10, pdfWidth, imgHeight);
       const namePart = customerName.trim().replace(/\s+/g, '_') || 'bill';
       const datePart = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
       pdf.save(`${namePart}_${datePart}.pdf`);
@@ -208,33 +211,22 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const handlePrint = () => {
     const input = billContentRef.current;
     if (input) {
-      // Temporarily make the element visible for printing
-      input.style.position = 'fixed';
-      input.style.left = '0';
-      input.style.top = '0';
-      input.style.zIndex = '9999';
-      input.style.background = 'white';
-      
       const printWindow = window.open('', '_blank');
       printWindow?.document.write('<html><head><title>Print Bill</title>');
       printWindow?.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; } .bill-print-container { font-family: sans-serif; } }</style>');
       printWindow?.document.write('</head><body>');
-      printWindow?.document.write(input.innerHTML);
-      printWindow?.document.write('</body></html>');
+      
+      const contentToPrint = input.cloneNode(true) as HTMLElement;
+      contentToPrint.style.width = '100%';
+      contentToPrint.style.padding = '0';
+      
+      printWindow?.document.body.appendChild(contentToPrint);
       printWindow?.document.close();
       printWindow?.focus();
 
       setTimeout(() => {
         printWindow?.print();
         printWindow?.close();
-        // Hide the element again
-        if(billContentRef.current) {
-            billContentRef.current.style.position = '';
-            billContentRef.current.style.left = '';
-            billContentRef.current.style.top = '';
-            billContentRef.current.style.zIndex = '';
-            billContentRef.current.style.background = '';
-        }
       }, 250);
     }
   };
@@ -277,88 +269,90 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   
   return (
     <>
-      {/* Hidden div for PDF/Print generation */}
-      <div className="absolute top-0 -z-50 opacity-0" aria-hidden="true">
-        <div ref={billContentRef} className="bill-print-container w-[800px] p-6 bg-white text-black text-sm">
-            <div className="border-2 border-black p-4">
-                <div className="text-center mb-4">
-                    <h3 className="text-2xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                    <p className="text-sm mt-1">Contact: 8530378745</p>
-                    <p className="text-sm font-bold mt-2">Official Bill Receipt</p>
-                </div>
-                
-                <Separator className="my-3 border-dashed border-black" />
+      <div className="absolute top-0 -left-[9999px]" aria-hidden="true">
+          <div ref={billContentRef} className="bill-print-container w-[80mm] p-2 bg-white text-black text-[10px]">
+              <div className="border border-black p-2">
+                  <div className="text-center mb-2">
+                      <h3 className="text-lg font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                      <p className="text-[8px] mt-1">Contact: 8530378745</p>
+                      <p className="text-xs font-bold mt-1">Official Bill Receipt</p>
+                  </div>
+                  
+                  <div className="border-t border-b border-dashed border-black my-2 py-1">
+                      <div className="flex justify-between text-[9px]">
+                          <div className="font-mono"><strong>Bill:</strong> {billNumber}</div>
+                          <div><strong>Date:</strong> {billDate}</div>
+                      </div>
+                      <div className="flex justify-between text-[9px] mt-1">
+                          <div><strong>{isParcel ? 'Type:' : 'Table:'}</strong> {activeTable}</div>
+                          {customerName && <div><strong>Cust:</strong> {customerName}</div>}
+                      </div>
+                  </div>
+                                  
+                  <table className="w-full text-[10px]">
+                      <thead>
+                          <tr className="border-b-2 border-black">
+                              <th className="text-left py-1 font-bold">Item</th>
+                              <th className="text-center py-1 font-bold">Qty</th>
+                              <th className="text-right py-1 font-bold">Price</th>
+                              <th className="text-right py-1 font-bold">Amount</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {items.map(item => (
+                              <tr key={item.id} className="border-b border-dashed border-gray-400">
+                                  <td className="py-1 pr-1">{item.name}</td>
+                                  <td className="text-center py-1">{item.quantity}</td>
+                                  <td className="text-right py-1 font-mono">{item.price.toFixed(2)}</td>
+                                  <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+                  
+                  <div className="mt-2 text-xs flex justify-end">
+                      <div className="w-full space-y-1">
+                          <div className="flex justify-between">
+                              <span>Subtotal:</span>
+                              <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                              <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                              <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                          </div>
+                          <div className="border-t border-black my-1"></div>
+                          <div className="flex justify-between font-bold text-sm">
+                              <span>TOTAL:</span>
+                              <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
+                          </div>
+                      </div>
+                  </div>
 
-                <div className="flex justify-between text-xs mb-3">
-                    <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
-                    <div><strong>Date:</strong> {billDate}</div>
-                </div>
-                <div className="flex justify-between text-xs mb-3">
-                    <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
-                    {customerName && <div><strong>Customer:</strong> {customerName}</div>}
-                </div>
-                
-                <Separator className="my-3 border-dashed border-black"/>
-                
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b-2 border-black">
-                            <th className="text-left py-1 font-bold w-1/2">Item</th>
-                            <th className="text-center py-1 font-bold">Qty</th>
-                            <th className="text-right py-1 font-bold">Price</th>
-                            <th className="text-right py-1 font-bold">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map(item => (
-                            <tr key={item.id} className="border-b border-gray-300">
-                                <td className="py-1">{item.name}</td>
-                                <td className="text-center py-1">{item.quantity}</td>
-                                <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
-                                <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                
-                <div className="mt-4 text-sm flex justify-end">
-                    <div className="w-1/2 space-y-1">
-                        <div className="flex justify-between">
-                            <span className="text-black">Subtotal:</span>
-                            <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                            <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
-                        </div>
-                        <Separator className="my-1 border-dashed border-black" />
-                        <div className="flex justify-between font-bold text-base text-black">
-                            <span>TOTAL:</span>
-                            <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex justify-between items-end mt-12 text-xs">
-                    <div>
-                        <p>Payment Mode: ________________</p>
-                    </div>
-                    <div className="text-center">
-                        <p className="border-t border-black px-8 pt-1">Authorized Signature</p>
-                    </div>
-                </div>
-                
-                <p className="text-center text-xs text-gray-700 mt-8">
-                    Thank you for your visit!
-                </p>
-            </div>
+                  <div className="flex justify-between items-end mt-4 text-[9px]">
+                      <div>
+                          <p>Pay Mode: ____________</p>
+                      </div>
+                      <div className="text-center">
+                          <p className="border-t border-black px-4 pt-1">Signature</p>
+                      </div>
+                  </div>
+                  
+                  <p className="text-center text-[9px] text-gray-700 mt-4">
+                      Thank you for your visit!
+                  </p>
+              </div>
+          </div>
         </div>
-      </div>
       
-      <Card className="sticky top-20 shadow-lg">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline text-xl flex justify-between items-center">
             <span>{isParcel ? 'Parcel Bill' : `Table ${activeTable} Bill`}</span>
+            {items.length > 0 && 
+                <Button variant="ghost" size="icon" onClick={onClearBill}>
+                    <Trash2 className="h-5 w-5 text-destructive/80" />
+                </Button>
+            }
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -446,86 +440,85 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   </Button>
                 </DialogTrigger>
                 {billNumber && (
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
-                    </DialogHeader>
-                    <div className="p-4 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
-                        <div className="text-center mb-4">
-                            <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                            <p className="text-xs mt-1">Contact: 8530378745</p>
-                            <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
-                        </div>
-                        
-                        <Separator className="my-3 border-dashed border-black" />
-
-                        <div className="flex justify-between text-xs mb-3">
-                            <div className="font-mono"><strong>Bill No:</strong> {billNumber}</div>
-                            <div><strong>Date:</strong> {billDate}</div>
-                        </div>
-                        <div className="flex justify-between text-xs mb-3">
-                            <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
-                            {customerName && <div><strong>Customer:</strong> {customerName}</div>}
-                        </div>
-                        
-                        <Separator className="my-3 border-dashed border-black"/>
-                        
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b-2 border-black">
-                                    <th className="text-left py-1 font-bold w-1/2">Item</th>
-                                    <th className="text-center py-1 font-bold">Qty</th>
-                                    <th className="text-right py-1 font-bold">Price</th>
-                                    <th className="text-right py-1 font-bold">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.map(item => (
-                                    <tr key={item.id} className="border-b border-gray-300">
-                                        <td className="py-1">{item.name}</td>
-                                        <td className="text-center py-1">{item.quantity}</td>
-                                        <td className="text-right py-1 font-mono">{(item.price).toFixed(2)}</td>
-                                        <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        
-                        <div className="mt-4 text-sm flex justify-end">
-                            <div className="w-1/2 space-y-1">
-                                <div className="flex justify-between">
-                                    <span className="text-black">Subtotal:</span>
-                                    <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-black">GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                                    <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
-                                </div>
-                                <Separator className="my-1 border-dashed border-black" />
-                                <div className="flex justify-between font-bold text-base text-black">
-                                    <span>TOTAL:</span>
-                                    <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                       <div className="flex gap-2">
-                         <Button variant="secondary" size="sm" onClick={handlePrint}>Print</Button>
-                         <Button variant="secondary" size="sm" onClick={generatePdf}>PDF</Button>
+                   <DialogContent className="max-w-sm">
+                   <DialogHeader>
+                     <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
+                   </DialogHeader>
+                   <ScrollArea className="max-h-[50vh]">
+                     <div className="p-1">
+                       <div className="bill-print-container w-full p-2 bg-white text-black text-[10px] border border-black">
+                         <div className="text-center mb-2">
+                           <h3 className="text-lg font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                           <p className="text-[8px] mt-1">Contact: 8530378745</p>
+                           <p className="text-xs font-bold mt-1">Official Bill Receipt</p>
+                         </div>
+                         <div className="border-t border-b border-dashed border-black my-2 py-1">
+                           <div className="flex justify-between text-[9px]">
+                             <div className="font-mono"><strong>Bill:</strong> {billNumber}</div>
+                             <div><strong>Date:</strong> {billDate}</div>
+                           </div>
+                           <div className="flex justify-between text-[9px] mt-1">
+                             <div><strong>{isParcel ? 'Type:' : 'Table:'}</strong> {activeTable}</div>
+                             {customerName && <div><strong>Cust:</strong> {customerName}</div>}
+                           </div>
+                         </div>
+                         <table className="w-full text-[10px]">
+                           <thead>
+                             <tr className="border-b-2 border-black">
+                               <th className="text-left py-1 font-bold">Item</th>
+                               <th className="text-center py-1 font-bold">Qty</th>
+                               <th className="text-right py-1 font-bold">Price</th>
+                               <th className="text-right py-1 font-bold">Amount</th>
+                             </tr>
+                           </thead>
+                           <tbody>
+                             {items.map(item => (
+                               <tr key={item.id} className="border-b border-dashed border-gray-400">
+                                 <td className="py-1 pr-1">{item.name}</td>
+                                 <td className="text-center py-1">{item.quantity}</td>
+                                 <td className="text-right py-1 font-mono">{item.price.toFixed(2)}</td>
+                                 <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                               </tr>
+                             ))}
+                           </tbody>
+                         </table>
+                         <div className="mt-2 text-xs flex justify-end">
+                           <div className="w-full space-y-1">
+                             <div className="flex justify-between">
+                               <span>Subtotal:</span>
+                               <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                             </div>
+                             <div className="flex justify-between">
+                               <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                               <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                             </div>
+                             <div className="border-t border-black my-1"></div>
+                             <div className="flex justify-between font-bold text-sm">
+                               <span>TOTAL:</span>
+                               <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
+                             </div>
+                           </div>
+                         </div>
                        </div>
-                       <div className="flex-grow grid grid-cols-2 gap-2">
-                          <QRCodeDialog 
-                            upiUrl={upiUrl}
-                            totalAmount={totalAmount}
-                            onConfirmPayment={() => handlePayment('Online')}
-                          />
-                          <DialogClose asChild>
-                             <Button onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Paid by Cash</Button>
-                          </DialogClose>
-                       </div>
-                    </DialogFooter>
-                  </DialogContent>
+                     </div>
+                   </ScrollArea>
+                   <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
+                     <div className="flex gap-2 w-full">
+                       <Button variant="secondary" size="sm" onClick={handlePrint} className="flex-1">Print</Button>
+                       <Button variant="secondary" size="sm" onClick={generatePdf} className="flex-1">PDF</Button>
+                     </div>
+                     <div className="flex-grow grid grid-cols-2 gap-2 w-full">
+                       <QRCodeDialog
+                         upiUrl={upiUrl}
+                         totalAmount={totalAmount}
+                         onConfirmPayment={() => handlePayment('Online')}
+                       />
+                       <DialogClose asChild>
+                         <Button onClick={() => handlePayment('Cash')}><Landmark className="mr-2 h-4 w-4" /> Cash</Button>
+                       </DialogClose>
+                     </div>
+                   </DialogFooter>
+                 </DialogContent>
                 )}
               </Dialog>
               <Button variant="secondary" onClick={handleSaveToUdhari} disabled={items.length === 0} className="text-base sm:text-sm">
@@ -538,8 +531,3 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
-    
-
-    
-
-

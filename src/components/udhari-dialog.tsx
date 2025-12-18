@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "./ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 interface UdhariDialogProps {
@@ -190,17 +192,34 @@ const NoteEditor = ({ note, onUpdate, onDelete }: { note: Note, onUpdate: (conte
 
 
 export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, activeTable, notes, onAddNewNote, onUpdateNote, onDeleteNote, onUpdateUdhariNotes }: UdhariDialogProps) {
-
+    const isMobile = useIsMobile();
     const totalUdhari = udhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
     const totalSettledUdhari = settledUdhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
+
+    const TriggerButton = () => (
+        <Button variant="outline" size={isMobile ? "icon" : "default"}>
+            <NotebookText className={isMobile ? "h-5 w-5" : "mr-2 h-4 w-4"} /> 
+            <span className="hidden sm:inline">View Udhari ({udhariBills.length})</span>
+        </Button>
+    )
 
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline">
-                    <NotebookText className="mr-0 sm:mr-2 h-4 w-4" /> 
-                    <span className="hidden sm:inline">View Udhari ({udhariBills.length})</span>
-                </Button>
+                 {isMobile ? (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                               <TriggerButton />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>View Udhari ({udhariBills.length})</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                ) : (
+                    <TriggerButton />
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
@@ -258,7 +277,7 @@ export function UdhariDialog({ udhariBills, settledUdhariBills, onAddToBill, act
                                     <p className="text-center text-muted-foreground py-10">No notes yet. Click "New Note" to start.</p>
                                 ) : (
                                     <div className="space-y-4">
-                                        {notes.map(note => (
+                                        {notes.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(note => (
                                             <NoteEditor 
                                                 key={note.id} 
                                                 note={note} 

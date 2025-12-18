@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "./ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -116,6 +117,7 @@ type ItemSalesReport = {
 }
 
 export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHistoryDialogProps) {
+    const isMobile = useIsMobile();
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const reportRef = useRef<HTMLDivElement>(null);
     
@@ -210,6 +212,12 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
     const totalSettledUdhari = useMemo(() => settledUdhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0), [settledUdhariBills]);
     const totalUdhari = useMemo(() => activeUdhariBills.reduce((acc, bill) => acc + bill.totalAmount, 0), [activeUdhariBills]);
 
+    const TriggerButton = () => (
+         <Button variant="outline" size={isMobile ? "icon" : "default"}>
+            <History className={isMobile ? "h-5 w-5" : "mr-2 h-4 w-4"} />
+            <span className="hidden sm:inline">View History</span>
+        </Button>
+    )
 
     return (
         <>
@@ -220,10 +228,20 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </div>
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline">
-                    <History className="mr-0 sm:mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">View History</span>
-                </Button>
+                {isMobile ? (
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                               <TriggerButton />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>View History</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                ) : (
+                    <TriggerButton />
+                )}
             </DialogTrigger>
             <DialogContent className="max-w-md md:max-w-2xl lg:max-w-4xl h-[90vh] flex flex-col">
                 <DialogHeader>
@@ -384,5 +402,3 @@ export function PaymentHistoryDialog({ paymentHistory, udhariBills }: PaymentHis
         </>
     );
 }
-
-    

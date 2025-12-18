@@ -10,6 +10,9 @@ import { PaymentHistoryDialog } from "@/components/payment-history-dialog";
 import { UtensilsCrossed } from "lucide-react";
 import { TableLayout } from "@/components/table-layout";
 import { CurrentBillsDialog } from "@/components/current-bills-dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 export type BillItem = MenuItem & { quantity: number };
 
@@ -53,6 +56,8 @@ export default function Home() {
   const [paymentHistory, setPaymentHistory] = useState<SettledBill[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [tables, setTables] = useState<string[]>(INITIAL_TABLES);
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("menu");
 
   useEffect(() => {
     try {
@@ -155,6 +160,9 @@ export default function Home() {
       }
       return { ...prevBills, [activeTable]: newTableBill };
     });
+     if (isMobile) {
+      setActiveTab("bill");
+    }
   };
 
   const addUdhariToBill = (udhariBill: UdhariBill) => {
@@ -246,9 +254,7 @@ export default function Home() {
   }
 
   const billedTables = Object.keys(bills).filter(table => bills[table]?.length > 0);
-  
-  const activeUdhariBills = udhariBills.filter(b => b.status === 'active');
-  const settledUdhariBills = udhariBills.filter(b => b.status === 'settled');
+  const currentBillItems = bills[activeTable] || [];
 
   if (!isLoaded) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
@@ -261,9 +267,78 @@ export default function Home() {
       🍽️ हॉटेल सुग्ररण – 🥗🍗 Veg–Non-Veg जेवण, 🏡 घरगुती चव आणि 🤝 विश्वासाची ओळख ❤️&nbsp;
     </span>
   );
+  
+  const mainContent = isMobile ? (
+     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-grow flex flex-col">
+        <TabsContent value="menu" className="flex-grow mt-0">
+          <div className="space-y-4">
+             <TableLayout
+              tables={tables}
+              activeTable={activeTable}
+              billedTables={billedTables}
+              onSelectTable={setActiveTable}
+              onAddTable={handleAddTable}
+              onDeleteTable={handleDeleteTable}
+            />
+            <MenuSection onAddItem={addToBill} billItems={currentBillItems} />
+          </div>
+        </TabsContent>
+        <TabsContent value="bill" className="flex-grow mt-0">
+           <BillingSection
+              items={currentBillItems}
+              onUpdateQuantity={updateQuantity}
+              onClearBill={clearBill}
+              onSaveToUdhari={saveToUdhari}
+              onRecordPayment={recordPayment}
+              activeTable={activeTable}
+            />
+        </TabsContent>
+        <TabsList className="grid w-full grid-cols-2 h-14 rounded-none">
+          <TabsTrigger value="menu" className="text-base h-full rounded-none">Menu</TabsTrigger>
+          <TabsTrigger value="bill" className="text-base h-full rounded-none relative">
+            Current Bill
+             {currentBillItems.length > 0 && 
+                <Badge variant="destructive" className="absolute top-1 right-2 h-5 w-5 justify-center p-0">{currentBillItems.length}</Badge>
+            }
+            </TabsTrigger>
+        </TabsList>
+      </Tabs>
+  ) : (
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        <div className="lg:col-span-3 space-y-8">
+            <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
+              <div className="animate-marquee flex">
+                <MarqueeText />
+                <MarqueeText />
+              </div>
+            </div>
+            <TableLayout
+            tables={tables}
+            activeTable={activeTable}
+            billedTables={billedTables}
+            onSelectTable={setActiveTable}
+            onAddTable={handleAddTable}
+            onDeleteTable={handleDeleteTable}
+          />
+          <MenuSection onAddItem={addToBill} billItems={currentBillItems} />
+        </div>
+        <div className="lg:col-span-2">
+          <div className="sticky top-20">
+            <BillingSection
+              items={currentBillItems}
+              onUpdateQuantity={updateQuantity}
+              onClearBill={clearBill}
+              onSaveToUdhari={saveToUdhari}
+              onRecordPayment={recordPayment}
+              activeTable={activeTable}
+            />
+          </div>
+        </div>
+      </div>
+  );
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -276,8 +351,8 @@ export default function Home() {
             <div className="flex items-center gap-2 sm:gap-4">
                <CurrentBillsDialog bills={bills} />
                <UdhariDialog 
-                  udhariBills={activeUdhariBills} 
-                  settledUdhariBills={settledUdhariBills}
+                  udhariBills={udhariBills.filter(b => b.status === 'active')} 
+                  settledUdhariBills={udhariBills.filter(b => b.status === 'settled')}
                   onAddToBill={addUdhariToBill} 
                   activeTable={activeTable} 
                   notes={notes}
@@ -286,49 +361,23 @@ export default function Home() {
                   onDeleteNote={deleteNote}
                   onUpdateUdhariNotes={updateUdhariNotes}
                />
-               <PaymentHistoryDialog paymentHistory={paymentHistory} udhariBills={activeUdhariBills} />
+               <PaymentHistoryDialog paymentHistory={paymentHistory} udhariBills={udhariBills.filter(b => b.status === 'active')} />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-          <div className="lg:col-span-3 space-y-8">
-             <div className="relative overflow-hidden bg-primary/10 py-2 rounded-lg -mb-4">
-                <div className="animate-marquee flex">
-                  <MarqueeText />
-                  <MarqueeText />
-                </div>
-             </div>
-             <TableLayout
-              tables={tables}
-              activeTable={activeTable}
-              billedTables={billedTables}
-              onSelectTable={setActiveTable}
-              onAddTable={handleAddTable}
-              onDeleteTable={handleDeleteTable}
-            />
-            <MenuSection onAddItem={addToBill} billItems={bills[activeTable] || []} />
-          </div>
-          <div className="lg:col-span-2">
-            <BillingSection
-              items={bills[activeTable] || []}
-              onUpdateQuantity={updateQuantity}
-              onClearBill={clearBill}
-              onSaveToUdhari={saveToUdhari}
-              onRecordPayment={recordPayment}
-              activeTable={activeTable}
-            />
-          </div>
-        </div>
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow flex flex-col">
+        {mainContent}
       </main>
 
-      <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 border-t mt-8">
-        <p className="text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} Hotel Suvidha. All rights reserved.
-        </p>
-      </footer>
+      {!isMobile && (
+        <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 border-t mt-auto">
+          <p className="text-center text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} Hotel Suvidha. All rights reserved.
+          </p>
+        </footer>
+      )}
     </div>
   );
 }
