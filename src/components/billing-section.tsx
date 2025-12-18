@@ -105,7 +105,7 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
                     <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
                 </div>
                  <div className="px-4 space-y-2">
-                    <Progress value={progress} className="h-2" />
+                    <Progress value={progress} className="h-2 border border-black [&>div]:bg-red-500" />
                     <p className="text-center text-sm text-muted-foreground">
                         Time remaining: {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
                     </p>
