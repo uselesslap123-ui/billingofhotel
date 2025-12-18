@@ -188,7 +188,12 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
         }
 
         const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: [240, 360]
+        });
+
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         
@@ -281,7 +286,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   <div className="border-2 border-black p-4">
                       <div className="text-center mb-4">
                           <h3 className="text-2xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                          <p className="text-xs">Veg-Non-Veg</p>
                           <p className="text-sm font-bold mt-2">Official Bill Receipt</p>
                       </div>
                       
@@ -453,7 +457,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                        <div className="p-6 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
                             <div className="text-center mb-4">
                               <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                              <p className="text-xs">Veg-Non-Veg</p>
                               <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
                             </div>
                             
@@ -540,4 +543,3 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   );
 }
 
-    
