@@ -314,7 +314,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             <div className="text-center mb-4">
                               <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
                               <p className="text-xs">Veg-Non-Veg</p>
-                              <p className="text-xs">At Post Diveagar, Tal-Shrivardhan, Dist-Raigad</p>
                               <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
                             </div>
                             
@@ -383,7 +382,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                             </div>
                             
                             <p className="text-center text-xs text-gray-700 mt-6">
-                              पुन्हा भेट द्या! (Visit Again!)
+                              Thank you for your visit!
                             </p>
                           </div>
                         </div>
@@ -416,5 +415,3 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
-
-    
