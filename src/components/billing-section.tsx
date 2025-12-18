@@ -6,7 +6,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, Phone } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -121,6 +121,7 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
 
 export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToUdhari, onRecordPayment, activeTable }: BillingSectionProps) {
   const [customerName, setCustomerName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState("");
   const billContentRef = useRef<HTMLDivElement>(null);
@@ -187,7 +188,6 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
             billContentRef.current.style.background = '';
         }
 
-        const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
@@ -273,6 +273,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
       description: `Bill for ${customerName.trim()} has been saved to Udhari.`,
     });
     setCustomerName("");
+    setMobileNumber("");
   };
 
   const isParcel = activeTable === 'Parcel';
@@ -286,6 +287,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   <div className="border-2 border-black p-4">
                       <div className="text-center mb-4">
                           <h3 className="text-2xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                          <p className="text-sm mt-1">Contact: 8530378745</p>
                           <p className="text-sm font-bold mt-2">Official Bill Receipt</p>
                       </div>
                       
@@ -299,6 +301,11 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                           <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
                           {customerName && <div><strong>Customer:</strong> {customerName}</div>}
                       </div>
+                      {mobileNumber && (
+                        <div className="flex justify-between text-xs mb-3">
+                            <div><strong>Mobile No:</strong> {mobileNumber}</div>
+                        </div>
+                      )}
                       
                       <Separator className="my-3 border-dashed border-black"/>
                       
@@ -366,12 +373,25 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Input
-              placeholder="Customer Name (for Udhari/Invoice)"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className={cn("text-base sm:text-sm", shake && 'animate-shake')}
-            />
+             <div className="space-y-2">
+                <Input
+                  placeholder="Customer Name (for Udhari/Invoice)"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className={cn("text-base sm:text-sm", shake && 'animate-shake')}
+                />
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="tel"
+                    placeholder="Mobile Number (Optional)"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+                    className="pl-10 text-base sm:text-sm"
+                  />
+                </div>
+            </div>
+
 
             <ScrollArea className="h-64 pr-4">
               <div className="space-y-3">
@@ -457,6 +477,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                        <div className="p-6 bg-white text-black text-sm border-2 border-dashed border-gray-300 rounded-lg">
                             <div className="text-center mb-4">
                               <h3 className="text-xl font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                              <p className="text-xs mt-1">Contact: 8530378745</p>
                               <p className="text-xs font-bold mt-2">Official Bill Receipt</p>
                             </div>
                             
@@ -470,6 +491,11 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                               <div><strong>{isParcel ? 'Order Type:' : 'Table No:'}</strong> {activeTable}</div>
                               {customerName && <div><strong>Customer:</strong> {customerName}</div>}
                             </div>
+                            {mobileNumber && (
+                              <div className="flex justify-between text-xs mb-3">
+                                  <div><strong>Mobile No:</strong> {mobileNumber}</div>
+                              </div>
+                            )}
                             
                             <Separator className="my-3 border-dashed border-black"/>
                             
@@ -543,3 +569,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   );
 }
 
+
+    
