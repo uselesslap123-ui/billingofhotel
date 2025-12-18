@@ -7,7 +7,7 @@ import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, X } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, X, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -171,22 +171,7 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   const generatePdf = async () => {
     const input = billContentRef.current;
     if (input) {
-      // Ensure the content is visible for capture
-      input.style.position = 'fixed';
-      input.style.left = '0';
-      input.style.top = '0';
-      input.style.zIndex = '9999';
-      input.style.background = 'white';
-
-      const canvas = await html2canvas(input, { scale: 2, useCORS: true });
-      
-      // Hide the element again
-      input.style.position = '';
-      input.style.left = '';
-      input.style.top = '';
-      input.style.zIndex = '';
-      input.style.background = '';
-      
+      const canvas = await html2canvas(input, { scale: 2 });
       const imgData = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF({
@@ -269,80 +254,79 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
   
   return (
     <>
-      <div className="absolute top-0 -left-[9999px]" aria-hidden="true">
-          <div ref={billContentRef} className="bill-print-container w-[80mm] p-2 bg-white text-black text-[10px]">
-              <div className="border border-black p-2">
-                  <div className="text-center mb-2">
-                      <h3 className="text-lg font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                      <p className="text-[8px] mt-1">Contact: 8530378745</p>
-                      <p className="text-xs font-bold mt-1">Official Bill Receipt</p>
-                  </div>
-                  
-                  <div className="border-t border-b border-dashed border-black my-2 py-1">
-                      <div className="flex justify-between text-[9px]">
-                          <div className="font-mono"><strong>Bill:</strong> {billNumber}</div>
-                          <div><strong>Date:</strong> {billDate}</div>
-                      </div>
-                      <div className="flex justify-between text-[9px] mt-1">
-                          <div><strong>{isParcel ? 'Type:' : 'Table:'}</strong> {activeTable}</div>
-                          {customerName && <div><strong>Cust:</strong> {customerName}</div>}
-                      </div>
-                  </div>
-                                  
-                  <table className="w-full text-[10px]">
-                      <thead>
-                          <tr className="border-b-2 border-black">
-                              <th className="text-left py-1 font-bold">Item</th>
-                              <th className="text-center py-1 font-bold">Qty</th>
-                              <th className="text-right py-1 font-bold">Price</th>
-                              <th className="text-right py-1 font-bold">Amount</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {items.map(item => (
-                              <tr key={item.id} className="border-b border-dashed border-gray-400">
-                                  <td className="py-1 pr-1">{item.name}</td>
-                                  <td className="text-center py-1">{item.quantity}</td>
-                                  <td className="text-right py-1 font-mono">{item.price.toFixed(2)}</td>
-                                  <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-                  
-                  <div className="mt-2 text-xs flex justify-end">
-                      <div className="w-full space-y-1">
-                          <div className="flex justify-between">
-                              <span>Subtotal:</span>
-                              <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                              <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                              <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
-                          </div>
-                          <div className="border-t border-black my-1"></div>
-                          <div className="flex justify-between font-bold text-sm">
-                              <span>TOTAL:</span>
-                              <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div className="flex justify-between items-end mt-4 text-[9px]">
-                      <div>
-                          <p>Pay Mode: ____________</p>
-                      </div>
-                      <div className="text-center">
-                          <p className="border-t border-black px-4 pt-1">Signature</p>
-                      </div>
-                  </div>
-                  
-                  <p className="text-center text-[9px] text-gray-700 mt-4">
-                      Thank you for your visit!
-                  </p>
+      <div className="fixed -left-[9999px] top-0" aria-hidden="true">
+        <div ref={billContentRef} className="bill-print-container w-[80mm] p-2 bg-white text-black text-[10px]">
+           <div className="border border-black p-2">
+              <div className="text-center mb-2">
+                <h3 className="text-lg font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                <p className="text-[8px] mt-1">Contact: 8530378745</p>
+                <p className="text-xs font-bold mt-1">Official Bill Receipt</p>
               </div>
-          </div>
+              <div className="border-t border-b border-dashed border-black my-2 py-1">
+                <div className="flex justify-between text-[9px]">
+                  <div className="font-mono"><strong>Bill:</strong> {billNumber}</div>
+                  <div><strong>Date:</strong> {billDate}</div>
+                </div>
+                <div className="flex justify-between text-[9px] mt-1">
+                  <div><strong>{isParcel ? 'Type:' : 'Table:'}</strong> {activeTable}</div>
+                  {customerName && <div><strong>Cust:</strong> {customerName}</div>}
+                </div>
+              </div>
+
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="border-b-2 border-black">
+                    <th className="text-left py-1 font-bold">Item</th>
+                    <th className="text-center py-1 font-bold">Qty</th>
+                    <th className="text-right py-1 font-bold">Price</th>
+                    <th className="text-right py-1 font-bold">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map(item => (
+                    <tr key={item.id} className="border-b border-dashed border-gray-400">
+                      <td className="py-1 pr-1">{item.name}</td>
+                      <td className="text-center py-1">{item.quantity}</td>
+                      <td className="text-right py-1 font-mono">{item.price.toFixed(2)}</td>
+                      <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="mt-2 text-xs flex justify-end">
+                <div className="w-1/2 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                    <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-black my-1"></div>
+                  <div className="flex justify-between font-bold text-sm">
+                    <span>TOTAL:</span>
+                    <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end mt-4 text-[9px]">
+                <div>
+                    <p>Pay Mode: ____________</p>
+                </div>
+                <div className="text-center">
+                    <p className="border-t border-black px-4 pt-1">Signature</p>
+                </div>
+              </div>
+              
+              <p className="text-center text-[9px] text-gray-700 mt-4">
+                  Thank you for your visit!
+              </p>
+            </div>
         </div>
+      </div>
       
       <Card className="shadow-lg">
         <CardHeader>
@@ -440,63 +424,61 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
                   </Button>
                 </DialogTrigger>
                 {billNumber && (
-                   <DialogContent className="max-w-sm">
+                   <DialogContent className="max-w-md w-full">
                    <DialogHeader>
                      <DialogTitle className="font-headline">Bill Preview & Payment</DialogTitle>
                    </DialogHeader>
-                   <ScrollArea className="max-h-[50vh]">
-                     <div className="p-1">
-                       <div className="bill-print-container w-full p-2 bg-white text-black text-[10px] border border-black">
-                         <div className="text-center mb-2">
-                           <h3 className="text-lg font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
-                           <p className="text-[8px] mt-1">Contact: 8530378745</p>
-                           <p className="text-xs font-bold mt-1">Official Bill Receipt</p>
+                   <ScrollArea className="max-h-[50vh] -mx-6 px-6">
+                    <div className="bill-print-container w-full p-2 bg-white text-black text-[10px] border border-black">
+                       <div className="text-center mb-2">
+                         <h3 className="text-lg font-bold font-headline text-black">हॉटेल सुग्ररण</h3>
+                         <p className="text-[8px] mt-1">Contact: 8530378745</p>
+                         <p className="text-xs font-bold mt-1">Official Bill Receipt</p>
+                       </div>
+                       <div className="border-t border-b border-dashed border-black my-2 py-1">
+                         <div className="flex justify-between text-[9px]">
+                           <div className="font-mono"><strong>Bill:</strong> {billNumber}</div>
+                           <div><strong>Date:</strong> {billDate}</div>
                          </div>
-                         <div className="border-t border-b border-dashed border-black my-2 py-1">
-                           <div className="flex justify-between text-[9px]">
-                             <div className="font-mono"><strong>Bill:</strong> {billNumber}</div>
-                             <div><strong>Date:</strong> {billDate}</div>
-                           </div>
-                           <div className="flex justify-between text-[9px] mt-1">
-                             <div><strong>{isParcel ? 'Type:' : 'Table:'}</strong> {activeTable}</div>
-                             {customerName && <div><strong>Cust:</strong> {customerName}</div>}
-                           </div>
+                         <div className="flex justify-between text-[9px] mt-1">
+                           <div><strong>{isParcel ? 'Type:' : 'Table:'}</strong> {activeTable}</div>
+                           {customerName && <div><strong>Cust:</strong> {customerName}</div>}
                          </div>
-                         <table className="w-full text-[10px]">
-                           <thead>
-                             <tr className="border-b-2 border-black">
-                               <th className="text-left py-1 font-bold">Item</th>
-                               <th className="text-center py-1 font-bold">Qty</th>
-                               <th className="text-right py-1 font-bold">Price</th>
-                               <th className="text-right py-1 font-bold">Amount</th>
+                       </div>
+                       <table className="w-full text-[10px]">
+                         <thead>
+                           <tr className="border-b-2 border-black">
+                             <th className="text-left py-1 font-bold">Item</th>
+                             <th className="text-center py-1 font-bold">Qty</th>
+                             <th className="text-right py-1 font-bold">Price</th>
+                             <th className="text-right py-1 font-bold">Amount</th>
+                           </tr>
+                         </thead>
+                         <tbody>
+                           {items.map(item => (
+                             <tr key={item.id} className="border-b border-dashed border-gray-400">
+                               <td className="py-1 pr-1">{item.name}</td>
+                               <td className="text-center py-1">{item.quantity}</td>
+                               <td className="text-right py-1 font-mono">{item.price.toFixed(2)}</td>
+                               <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
                              </tr>
-                           </thead>
-                           <tbody>
-                             {items.map(item => (
-                               <tr key={item.id} className="border-b border-dashed border-gray-400">
-                                 <td className="py-1 pr-1">{item.name}</td>
-                                 <td className="text-center py-1">{item.quantity}</td>
-                                 <td className="text-right py-1 font-mono">{item.price.toFixed(2)}</td>
-                                 <td className="text-right py-1 font-mono">{(item.price * item.quantity).toFixed(2)}</td>
-                               </tr>
-                             ))}
-                           </tbody>
-                         </table>
-                         <div className="mt-2 text-xs flex justify-end">
-                           <div className="w-full space-y-1">
-                             <div className="flex justify-between">
-                               <span>Subtotal:</span>
-                               <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
-                             </div>
-                             <div className="flex justify-between">
-                               <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
-                               <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
-                             </div>
-                             <div className="border-t border-black my-1"></div>
-                             <div className="flex justify-between font-bold text-sm">
-                               <span>TOTAL:</span>
-                               <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
-                             </div>
+                           ))}
+                         </tbody>
+                       </table>
+                       <div className="mt-2 text-xs flex justify-end">
+                         <div className="w-1/2 space-y-1">
+                           <div className="flex justify-between">
+                             <span>Subtotal:</span>
+                             <span className="font-medium font-mono text-right">Rs.{subtotal.toFixed(2)}</span>
+                           </div>
+                           <div className="flex justify-between">
+                             <span>GST ({(GST_RATE * 100).toFixed(0)}%):</span>
+                             <span className="font-medium font-mono text-right">Rs.{gstAmount.toFixed(2)}</span>
+                           </div>
+                           <div className="border-t border-black my-1"></div>
+                           <div className="flex justify-between font-bold text-sm">
+                             <span>TOTAL:</span>
+                             <span className="font-mono text-right">Rs.{totalAmount.toFixed(2)}</span>
                            </div>
                          </div>
                        </div>
@@ -531,3 +513,5 @@ export function BillingSection({ items, onUpdateQuantity, onClearBill, onSaveToU
     </>
   );
 }
+
+    
