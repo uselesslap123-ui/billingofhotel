@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import type { BillItem, UdhariBill, SettledBill } from "@/app/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download } from "lucide-react";
+import { Minus, Plus, Trash2, Printer, BookUser, CreditCard, Landmark, Download, Timer } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,38 @@ const PAYEE_NAME = "Hotel Sugaran";
 
 const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: string, totalAmount: number, onConfirmPayment: () => void }) => {
     const [isQrOpen, setIsQrOpen] = useState(false);
-    
+    const [timer, setTimer] = useState(90);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        let countdown: NodeJS.Timeout;
+        if (isQrOpen) {
+            setTimer(90); // Reset timer on open
+            countdown = setInterval(() => {
+                setTimer(prev => {
+                    if (prev <= 1) {
+                        clearInterval(countdown);
+                        setIsQrOpen(false);
+                        toast({
+                            title: "Payment Failed",
+                            description: "The payment session timed out.",
+                            variant: "destructive",
+                        });
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+
+        return () => clearInterval(countdown);
+    }, [isQrOpen, toast]);
+
+    const handlePaymentConfirm = () => {
+        setIsQrOpen(false);
+        onConfirmPayment();
+    }
+
     return (
         <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
             <DialogTrigger asChild>
@@ -56,11 +87,13 @@ const QRCodeDialog = ({ upiUrl, totalAmount, onConfirmPayment }: { upiUrl: strin
                     </div>
                     <p className="mt-4 font-bold text-xl">Total: Rs.{totalAmount.toFixed(2)}</p>
                     <p className="text-sm mt-1 font-mono text-muted-foreground">{UPI_ID}</p>
+                    <div className="mt-4 flex items-center text-sm text-destructive">
+                        <Timer className="mr-2 h-4 w-4" />
+                        <span>Expires in {Math.floor(timer / 60)}:{('0' + (timer % 60)).slice(-2)}</span>
+                    </div>
                 </div>
                 <DialogFooter>
-                    <DialogClose asChild>
-                        <Button className="w-full" onClick={onConfirmPayment}>Confirm Payment</Button>
-                    </DialogClose>
+                    <Button className="w-full" onClick={handlePaymentConfirm}>Confirm Payment</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
